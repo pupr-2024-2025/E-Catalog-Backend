@@ -143,4 +143,23 @@ class UsersController extends Controller
     }
 
     public function getRoleByToken() {}
+
+    public function getAllUsers()
+    {
+        $countUserSipasti = $this->userService->countUserSipasti();
+        $countUser = $this->userService->countUser();
+
+        if ($countUserSipasti == $countUser) {
+            $user = $this->userService->listUser();
+        }  else {
+            $user = $this->userService->getUserSipasti(1, 500);
+
+
+        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'berhasil menampilkan data',
+            'data' => $user
+        ]);
+    }
 }

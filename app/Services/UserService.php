@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Users;
+use GPBMetadata\Google\Api\Http;
 use Illuminate\Support\Facades\Storage;
 
 class UserService
@@ -45,5 +46,22 @@ class UserService
             return $item;
         });
         return $data;
+    }
+
+    public function countUser()
+    {
+        return Users::count();
+    }
+
+    public function countUserSipasti()
+    {
+        $response = Http::get('https://sipasti.bkn.go.id/api/pegawai/count');
+        return $response->json();
+    }
+
+    public function getUserSipasti($page=1, $perPage=500)
+    {
+        $response = Http::get('https://sipasti.bkn.go.id/api/pegawai');
+        return $response->json();
     }
 }

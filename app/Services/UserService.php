@@ -82,6 +82,8 @@ class UserService
                 $exists = PerencanaanData::whereJsonContains('pengolah_data_id', (string)$user->user_id)->exists();
             } elseif ($roleName === 'petugas lapangan') {
                 $exists = PerencanaanData::whereJsonContains('petugas_lapangan_id', (string)$user->user_id)->exists();
+            } elseif ($roleName === 'tim teknis balai') {
+                $exists = PerencanaanData::whereJsonContains('team_teknis_balai_id', (string)$user->user_id)->exists();
             }
 
             return [
@@ -128,6 +130,8 @@ class UserService
                 return !PerencanaanData::whereJsonContains('pengolah_data_id', (string)$user->user_id)->exists();
             } elseif ($roleName === 'petugas lapangan') {
                 return !PerencanaanData::whereJsonContains('petugas_lapangan_id', (string)$user->user_id)->exists();
+            } else if ($roleName === 'tim teknis balai') {
+                return !PerencanaanData::whereJsonContains('team_teknis_balai_id', (string)$user->user_id)->exists();
             }
             return true;
         })->map(function ($user) {
@@ -148,7 +152,7 @@ class UserService
     {
         $balaiKey = $data['balai_key'];
 
-        // TODO: get data by balai and id_roles = 9
+        // TODO: get data by balai and id_roles = 9 ('guest')
         $users = Users::select([
             'users.id AS user_id',
             'users.nama_lengkap',

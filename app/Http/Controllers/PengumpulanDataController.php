@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Pengawas;
 use App\Models\PengolahData;
+use App\Models\PerencanaanData;
 use App\Models\PetugasLapangan;
 use App\Services\PengumpulanDataService;
 use App\Services\PerencanaanDataService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class PengumpulanDataController extends Controller
@@ -29,6 +31,7 @@ class PengumpulanDataController extends Controller
             'nama_team' => 'required',
             'ketua_team' => 'required',
             'sekretaris_team' => 'required',
+            'informasi_umum_id' => 'required',
             'anggota' => 'required',
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048'
         ];
@@ -39,13 +42,17 @@ class PengumpulanDataController extends Controller
                 'status' => 'error',
                 'message' => 'validasi gagal!',
                 'data' => []
-            ]);
+            ], 400);
         }
 
         try {
-            if ($request->hasFile('sk_penugasan')) {
-                $filePath = $request->file('sk_penugasan')->store('sk_penugasan');
-            }
+            // 1) Upload file ke disk 'public' (NOTE: ini mengembalikan PATH relatif (bukan URL))
+            $filePath = $request->file('sk_penugasan')->store('sk_penugasan', 'public');
+
+            // 3) Konversi PATH -> URL publik (/storage/...) agar FE bisa "Lihat PDF"
+            /** @var FilesystemAdapter $disk */
+            $disk = Storage::disk('public');
+            $fileURL = $disk->url($filePath);
 
             $ketua = (int) $request->input('ketua_team');
             $sekretaris = (int) $request->input('sekretaris_team');
@@ -69,7 +76,9 @@ class PengumpulanDataController extends Controller
                 'ketua_team' => $request->input('ketua_team'),
                 'sekretaris_team' => $request->input('sekretaris_team'),
                 'anggota' => $arrayAnggota,
-                'sk_penugasan' => $filePath
+                'informasi_umum_id' => $request->input('informasi_umum_id'),
+                'sk_penugasan' => $fileURL, // kirim URL
+                'relative_path' => $filePath // kirim relative path dari filenya
             ];
 
             $saveData = $this->pengumpulanDataService->storeTeamPengumpulanData($data);
@@ -78,7 +87,7 @@ class PengumpulanDataController extends Controller
                     'status' => 'success',
                     'message' => 'Data berhasil disimpan',
                     'data' => $saveData
-                ]);
+                ], 201);
             }
         } catch (\Exception $e) {
             return response()->json([
@@ -199,7 +208,8 @@ class PengumpulanDataController extends Controller
     {
         $rules = [
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048',
-            'user_id' => 'required'
+            'user_id' => 'required',
+            'informasi_umum_id' => 'required'
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -207,11 +217,17 @@ class PengumpulanDataController extends Controller
                 'status' => 'error',
                 'message' => 'validasi gagal!',
                 'error' => $validator->errors()
-            ]);
+            ],400);
         }
 
         $array = explode(',', $request['user_id']);
+
+        $informasiUmumId = $request['informasi_umum_id'];
+
         try {
+            PerencanaanData::where("informasi_umum_id", "=", $informasiUmumId)
+                ->update(["pengawas_id" => $array]);
+
             $data = [];
 
             if ($request->hasFile('sk_penugasan')) {

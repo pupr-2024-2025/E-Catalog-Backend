@@ -35,20 +35,34 @@ class PengumpulanDataService
                 'nama_team'          => $data['nama_team'],
                 'user_id_ketua'      => $data['ketua_team'] ?? null,
                 'user_id_sekretaris' => $data['sekretaris_team'] ?? null,
-                'user_id_anggota'    => $data["anggota"],                   // pastikan cast array di model
-                'url_sk_penugasan'   => $data['sk_penugasan'],  // konsisten dengan kolom di DB
+                'user_id_anggota'    => $data["anggota"],        // pastikan cast array di model
+                'url_sk_penugasan'   => $data['relative_path'],  // diisi relative pathnya
             ]);
 
-            // 2) Update role semua user yang ditugaskan
-            $userIds = array_filter(array_merge(
-                [$data['ketua_team'] ?? null, $data['sekretaris_team'] ?? null],
-                $data["anggota"]
-            ));
-            dd($userIds);
+            // 2) Kumpulkan semua user id: ketua, sekretaris, anggota
+            $allMembers = array_merge(
+                [$data['ketua_team'] ?? null],
+                [$data['sekretaris_team'] ?? null],
+                $data['anggota'] ?? []
+            );
 
-            if (!empty($userIds)) {
-                Users::whereIn('id', $userIds)->update([
-                    'id_roles' => 2, // gunakan integer, sesuaikan ID role yang benar
+            // Buang null/kosong, paksa ke string, dan unik (jaga urutan: ketua, sekretaris, lalu anggota)
+            $allMembers = array_values(array_unique(array_map('strval', array_filter($allMembers, function ($v) {
+                return $v !== null && $v !== '';
+            }))));
+
+            // 3) Update PerencanaanData: simpan sebagai JSON
+            $idInformasiUmum = $data['informasi_umum_id']; // asumsi single value
+            PerencanaanData::where('informasi_umum_id', '=', $idInformasiUmum)
+                ->update([
+                    'team_teknis_balai_id' => json_encode($allMembers),
+                ]);
+
+            // 4) Update role & surat penugasan semua anggota (ketua+sekretaris+anggota)
+            if (!empty($allMembers)) {
+                Users::whereIn('id', $allMembers)->update([
+                    'id_roles'             => 2, // Tim Teknis Balai
+                    'surat_penugasan_url'  => $data['sk_penugasan'],
                 ]);
             }
 

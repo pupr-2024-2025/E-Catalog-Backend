@@ -52,11 +52,11 @@ class PengumpulanDataService
             }))));
 
             // 3) Update PerencanaanData: simpan sebagai JSON
-            $idInformasiUmum = $data['informasi_umum_id']; // asumsi single value
-            PerencanaanData::where('informasi_umum_id', '=', $idInformasiUmum)
-                ->update([
-                    'team_teknis_balai_id' => json_encode($allMembers),
-                ]);
+            // $idInformasiUmum = $data['informasi_umum_id']; // asumsi single value
+            // PerencanaanData::where('informasi_umum_id', '=', $idInformasiUmum)
+            //     ->update([
+            //         'team_teknis_balai_id' => json_encode($allMembers),
+            //     ]);
 
             // 4) Update role & surat penugasan semua anggota (ketua+sekretaris+anggota)
             if (!empty($allMembers)) {

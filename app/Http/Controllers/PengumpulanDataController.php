@@ -33,7 +33,7 @@ class PengumpulanDataController extends Controller
             'nama_team' => 'required',
             'ketua_team' => 'required',
             'sekretaris_team' => 'required',
-            'informasi_umum_id' => 'required',
+            // 'informasi_umum_id' => 'required',
             'anggota' => 'required',
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048'
         ];
@@ -78,7 +78,7 @@ class PengumpulanDataController extends Controller
                 'ketua_team' => $request->input('ketua_team'),
                 'sekretaris_team' => $request->input('sekretaris_team'),
                 'anggota' => $arrayAnggota,
-                'informasi_umum_id' => $request->input('informasi_umum_id'),
+                // 'informasi_umum_id' => $request->input('informasi_umum_id'),
                 'sk_penugasan' => $fileURL, // kirim URL
                 'relative_path' => $filePath // kirim relative path dari filenya
             ];
@@ -212,7 +212,7 @@ class PengumpulanDataController extends Controller
         $rules = [
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048',
             'user_id' => 'required',
-            'informasi_umum_id' => 'required'
+            // 'informasi_umum_id' => 'required'
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -225,7 +225,7 @@ class PengumpulanDataController extends Controller
 
         $array = explode(',', $request['user_id']);
 
-        $informasiUmumId = $request['informasi_umum_id'];
+        // $informasiUmumId = $request['informasi_umum_id'];
 
         // TODO: tolong nanti diganti jika GCP sudah on
         $filePath = $request->file('sk_penugasan')->store('sk_penugasan', "public");
@@ -234,8 +234,8 @@ class PengumpulanDataController extends Controller
         $fullPath = $disk->url($filePath);
 
         try {
-            PerencanaanData::where("informasi_umum_id", "=", $informasiUmumId)
-                ->update(["pengawas_id" => $array]);
+            // PerencanaanData::where("informasi_umum_id", "=", $informasiUmumId)
+            //     ->update(["pengawas_id" => $array]);
 
             Users::whereIn("id", $array)
                 ->update([
@@ -304,8 +304,7 @@ class PengumpulanDataController extends Controller
         $rules = [
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048',
             'user_id' => 'required',
-            'informasi_umum_id' => 'required'
-
+            // 'informasi_umum_id' => 'required'
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -323,11 +322,11 @@ class PengumpulanDataController extends Controller
         $fullPath = $disk->url($filePath);
 
         $array = explode(',', $request['user_id']);
-        $informasiUmumId = $request['informasi_umum_id'];
+        // $informasiUmumId = $request['informasi_umum_id'];
         try {
 
-            PerencanaanData::where("informasi_umum_id", '=', $informasiUmumId)
-                ->update(['petugas_lapangan_id' => $array]);
+            // PerencanaanData::where("informasi_umum_id", '=', $informasiUmumId)
+            //     ->update(['petugas_lapangan_id' => $array]);
 
             Users::whereIn("id", $array)
                 ->update([
@@ -368,7 +367,7 @@ class PengumpulanDataController extends Controller
         $rules = [
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048',
             'user_id' => 'required',
-            'informasi_umum_id' => 'required',
+            // 'informasi_umum_id' => 'required',
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -386,12 +385,12 @@ class PengumpulanDataController extends Controller
         $fullPath = $disk->url($filePath);
 
         $array = explode(',', $request['user_id']);
-        $informasiUmumId = $request['informasi_umum_id'];
+        // $informasiUmumId = $request['informasi_umum_id'];
         try {
-            PerencanaanData::where("informasi_umum_id", "=", $informasiUmumId)
-                ->update([
-                    "pengolah_data_id" => $array,
-                ]);
+            // PerencanaanData::where("informasi_umum_id", "=", $informasiUmumId)
+            //     ->update([
+            //         "pengolah_data_id" => $array,
+            //     ]);
 
             Users::whereIn("id", $array)
                 ->update([

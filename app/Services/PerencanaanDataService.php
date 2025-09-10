@@ -107,11 +107,12 @@ class PerencanaanDataService
             ->get();
     }
 
-    public function listPerencanaanDataByNamaBalai($nama_balai)
+    public function listPerencanaanDataByNamaBalai($nama_balai,$status)
     {
         $result = PerencanaanData::join('informasi_umum', 'perencanaan_data.informasi_umum_id', '=', 'informasi_umum.id')
             ->join("satuan_balai_kerja", "informasi_umum.nama_balai", "=", "satuan_balai_kerja.id")
             ->whereRaw('TRIM(UPPER(satuan_balai_kerja.nama)) = TRIM(UPPER(?))', [$nama_balai])
+            ->where("status",'=',$status)
             // ->whereIn('perencanaan_data.status', $filteredStatuses)
             ->select([
                 'perencanaan_data.informasi_umum_id As id',

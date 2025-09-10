@@ -7,8 +7,8 @@ return [
     'ERROR_MESSAGE_SAVE' => 'Gagal Menyimpan Data',
 
     'STATUS_PERENCANAAN' => 'Proses Perencanaan Data',
-
     'STATUS_PENGUMPULAN' => 'Pengumpulan Data',
+
     'STATUS_PENGISIAN_PETUGAS' => 'Pengisian Oleh Petugas Lapangan',
     'STATUS_VERIFIKASI_PENGAWAS' => 'Verifikasi dan Valuasi Oleh Pengawas',
     'STATUS_ENTRI_DATA' => 'Proses Entri Data',

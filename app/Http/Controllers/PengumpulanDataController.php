@@ -152,7 +152,7 @@ class PengumpulanDataController extends Controller
         }
     }
 
-    public function listPengumpulanByNama(Request $request)
+    public function listPengumpulanDataByNamaBalai(Request $request)
     {
         $namaBalai = $request->query('nama_balai');
 
@@ -164,13 +164,15 @@ class PengumpulanDataController extends Controller
             ], 400);
         }
 
-        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai);
-        if (!$data || $data->isEmpty()) {
+        $statusPengumpulan = config("constants.STATUS_PENGUMPULAN");
+
+        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai,$statusPengumpulan);
+        if (!$data) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'No data found for the given nama_balai',
                 'data' => []
-            ], 404); // ← 200 OK, but empty
+            ], 404);
         }
 
         return response()->json([

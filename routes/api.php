@@ -117,7 +117,6 @@ Route::post('/pengumpulan-data/store-team-teknis', [PengumpulanDataController::c
 
 Route::get('/pengumpulan-data/table-list-pengumpulan', [PengumpulanDataController::class, 'listPengumpulanData']);
 Route::get('/pengumpulan-data/list-user', [PengumpulanDataController::class, 'listUser']);
-Route::get('/pengumpulan-data/list-pengumpulan-by-nama', [PengumpulanDataController::class, "listPengumpulanByNama"]);
 
 Route::post('/pengumpulan-data/store-pengawas', [PengumpulanDataController::class, 'storePengawas']);
 Route::post('/pengumpulan-data/store-petugas-lapangan', [PengumpulanDataController::class, 'storePetugasLapangan']);
@@ -153,3 +152,5 @@ Route::get('/eksternal/get-all-data-tenaga-kerja', [EksternalAppController::clas
 Route::get('/pj-balai/list-user', [UsersController::class, 'listByRoleAndByBalai']);
 Route::get('/pj-balai/list-user-standby', [UsersController::class, 'listByRoleAndByBalaiStatusStandby']);
 Route::get('/pj-balai/list-user-by-balai', [UsersController::class, 'listUserByNamaBalai']);
+Route::get('/pj-balai/list-perencanaan-by-nama-balai', [PerencanaanDataController::class, "listPerencanaanDataByNamaBalai"]);
+Route::get('/pj-balai/list-pengumpulan-by-nama-balai', [PengumpulanDataController::class, "listPengumpulanDataByNamaBalai"]);

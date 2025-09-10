@@ -121,7 +121,7 @@ Route::get('/pengumpulan-data/list-pengumpulan-by-nama', [PengumpulanDataControl
 
 Route::post('/pengumpulan-data/store-pengawas', [PengumpulanDataController::class, 'storePengawas']);
 Route::post('/pengumpulan-data/store-petugas-lapangan', [PengumpulanDataController::class, 'storePetugasLapangan']);
-Route::post('/pengumpulan-data/store-pengolah-data', [PengumpulanDataController::class, 'storepengolahData']);
+Route::post('/pengumpulan-data/store-pengolah-data', [PengumpulanDataController::class, 'storePengolahData']);
 
 Route::get('/pengumpulan-data/list-pengawas', [PengumpulanDataController::class, 'listPengawas']);
 Route::get('/pengumpulan-data/list-pengolah-data', [PengumpulanDataController::class, 'listPengolahData']);

@@ -109,8 +109,6 @@ class PerencanaanDataService
 
     public function listPerencanaanDataByNamaBalai($nama_balai)
     {
-        Log::info('🔍 [Debug] nama_balai received:', [$nama_balai]);
-
         $result = PerencanaanData::join('informasi_umum', 'perencanaan_data.informasi_umum_id', '=', 'informasi_umum.id')
             ->join("satuan_balai_kerja", "informasi_umum.nama_balai", "=", "satuan_balai_kerja.id")
             ->whereRaw('TRIM(UPPER(satuan_balai_kerja.nama)) = TRIM(UPPER(?))', [$nama_balai])
@@ -119,7 +117,8 @@ class PerencanaanDataService
                 'perencanaan_data.informasi_umum_id As id',
                 'perencanaan_data.status',
                 'informasi_umum.nama_paket',
-                'informasi_umum.nama_balai',
+                'informasi_umum.nama_balai as id_balai',
+                'satuan_balai_kerja.nama as nama_balai',
                 'informasi_umum.nama_ppk',
                 'informasi_umum.jabatan_ppk',
                 'informasi_umum.kode_rup'

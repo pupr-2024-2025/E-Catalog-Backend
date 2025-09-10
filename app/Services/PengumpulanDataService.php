@@ -62,7 +62,7 @@ class PengumpulanDataService
             if (!empty($allMembers)) {
                 Users::whereIn('id', $allMembers)->update([
                     'id_roles'             => 2, // Tim Teknis Balai
-                    'surat_penugasan_url'  => $data['sk_penugasan'],
+                    'surat_penugasan_url'  => $data['sk_penugasan'], // kirim full urlnya
                 ]);
             }
 

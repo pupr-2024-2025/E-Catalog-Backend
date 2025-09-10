@@ -6,8 +6,10 @@ use App\Models\Pengawas;
 use App\Models\PengolahData;
 use App\Models\PerencanaanData;
 use App\Models\PetugasLapangan;
+use App\Models\Users;
 use App\Services\PengumpulanDataService;
 use App\Services\PerencanaanDataService;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -49,7 +51,7 @@ class PengumpulanDataController extends Controller
             // 1) Upload file ke disk 'public' (NOTE: ini mengembalikan PATH relatif (bukan URL))
             $filePath = $request->file('sk_penugasan')->store('sk_penugasan', 'public');
 
-            // 3) Konversi PATH -> URL publik (/storage/...) agar FE bisa "Lihat PDF"
+            // 2) Konversi PATH -> URL publik (/storage/...) agar FE bisa "Lihat PDF"
             /** @var FilesystemAdapter $disk */
             $disk = Storage::disk('public');
             $fileURL = $disk->url($filePath);
@@ -203,7 +205,6 @@ class PengumpulanDataController extends Controller
         }
     }
 
-    // TODO: Change to Google Cloud Storage Bucket for Storing the sk_penugasan
     public function storePengawas(Request $request)
     {
         $rules = [
@@ -217,28 +218,37 @@ class PengumpulanDataController extends Controller
                 'status' => 'error',
                 'message' => 'validasi gagal!',
                 'error' => $validator->errors()
-            ],400);
+            ], 400);
         }
 
         $array = explode(',', $request['user_id']);
 
         $informasiUmumId = $request['informasi_umum_id'];
 
+        // TODO: tolong nanti diganti jika GCP sudah on
+        $filePath = $request->file('sk_penugasan')->store('sk_penugasan', "public");
+        /** @var FilesystemAdapter */
+        $disk = Storage::disk("public");
+        $fullPath = $disk->url($filePath);
+
         try {
             PerencanaanData::where("informasi_umum_id", "=", $informasiUmumId)
                 ->update(["pengawas_id" => $array]);
 
-            $data = [];
+            Users::whereIn("id", $array)
+                ->update([
+                    "id_roles" => 4,
+                    "surat_penugasan_url" => $fullPath
+                ]);
 
-            if ($request->hasFile('sk_penugasan')) {
-                // Change it using Google Cloud Storage Bucket
-                $filePath = $request->file('sk_penugasan')->store('public/sk_penugasan');
-            }
+            $data = [];
 
             foreach (collect($array) as $value) {
                 $data[] = [
                     'user_id' => $value,
-                    'sk_penugasan' => $filePath
+                    'sk_penugasan' => $filePath,
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ];
             }
 
@@ -248,14 +258,14 @@ class PengumpulanDataController extends Controller
                     'status' => 'success',
                     'message' => config('constants.SUCCESS_MESSAGE_SAVE'),
                     'data' => $data
-                ]);
+                ], 201);
             }
         } catch (\Exception $th) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_SAVE'),
                 'error' => $th->getMessage()
-            ]);
+            ], 400);
         }
     }
 
@@ -291,7 +301,9 @@ class PengumpulanDataController extends Controller
     {
         $rules = [
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048',
-            'user_id' => 'required'
+            'user_id' => 'required',
+            'informasi_umum_id' => 'required'
+
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -299,21 +311,36 @@ class PengumpulanDataController extends Controller
                 'status' => 'error',
                 'message' => 'validasi gagal!',
                 'error' => $validator->errors()
-            ]);
+            ], 400);
         }
 
-        $array = explode(',', $request['user_id']);
-        try {
-            $data = [];
+        // TODO: tolong nanti diganti jika GCP sudah on
+        $filePath = $request->file('sk_penugasan')->store('sk_penugasan', "public");
+        /** @var FilesystemAdapter  */
+        $disk = Storage::disk("public");
+        $fullPath = $disk->url($filePath);
 
-            if ($request->hasFile('sk_penugasan')) {
-                $filePath = $request->file('sk_penugasan')->store('sk_penugasan');
-            }
+        $array = explode(',', $request['user_id']);
+        $informasiUmumId = $request['informasi_umum_id'];
+        try {
+
+            PerencanaanData::where("informasi_umum_id", '=', $informasiUmumId)
+                ->update(['petugas_lapangan_id' => $array]);
+
+            Users::whereIn("id", $array)
+                ->update([
+                    "id_roles" => 5,
+                    "surat_penugasan_url" => $fullPath
+                ]);
+
+            $data = [];
 
             foreach (collect($array) as $value) {
                 $data[] = [
                     'user_id' => $value,
-                    'sk_penugasan' => $filePath
+                    'sk_penugasan' => $filePath,
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ];
             }
 
@@ -323,22 +350,23 @@ class PengumpulanDataController extends Controller
                     'status' => 'success',
                     'message' => config('constants.SUCCESS_MESSAGE_SAVE'),
                     'data' => $data
-                ]);
+                ], 201);
             }
         } catch (\Exception $th) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_SAVE'),
                 'error' => $th->getMessage()
-            ]);
+            ], 400);
         }
     }
 
-    public function storepengolahData(Request $request)
+    public function storePengolahData(Request $request)
     {
         $rules = [
             'sk_penugasan' => 'required|file|mimes:pdf,doc,docx|max:2048',
-            'user_id' => 'required'
+            'user_id' => 'required',
+            'informasi_umum_id' => 'required',
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -346,21 +374,37 @@ class PengumpulanDataController extends Controller
                 'status' => 'error',
                 'message' => 'validasi gagal!',
                 'error' => $validator->errors()
-            ]);
+            ], 400);
         }
 
-        $array = explode(',', $request['user_id']);
-        try {
-            $data = [];
+        // TODO: tolong nanti diganti jika GCP sudah on
+        $filePath = $request->file('sk_penugasan')->store('sk_penugasan', "public");
+        /** @var FilesystemAdapter */
+        $disk = Storage::disk("public");
+        $fullPath = $disk->url($filePath);
 
-            if ($request->hasFile('sk_penugasan')) {
-                $filePath = $request->file('sk_penugasan')->store('sk_penugasan');
-            }
+        $array = explode(',', $request['user_id']);
+        $informasiUmumId = $request['informasi_umum_id'];
+        try {
+            PerencanaanData::where("informasi_umum_id", "=", $informasiUmumId)
+                ->update([
+                    "pengolah_data_id" => $array,
+                ]);
+
+            Users::whereIn("id", $array)
+                ->update([
+                    "id_roles" => 7,
+                    "surat_penugasan_url" => $fullPath
+                ]);
+
+            $data = [];
 
             foreach (collect($array) as $value) {
                 $data[] = [
                     'user_id' => $value,
-                    'sk_penugasan' => $filePath
+                    'sk_penugasan' => $filePath,
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ];
             }
 
@@ -370,14 +414,14 @@ class PengumpulanDataController extends Controller
                     'status' => 'success',
                     'message' => config('constants.SUCCESS_MESSAGE_SAVE'),
                     'data' => $data
-                ]);
+                ], 201);
             }
         } catch (\Exception $th) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_SAVE'),
                 'error' => $th->getMessage()
-            ]);
+            ], 400);
         }
     }
 

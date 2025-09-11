@@ -13,7 +13,8 @@ class TeamTeknisBalai extends Model
         'nama_team',
         'user_id_ketua',
         'user_id_sekretaris',
-        'url_sk_penugasan'
+        'user_id_anggota',
+        'url_sk_penugasan',
     ];
 
     protected $casts = [

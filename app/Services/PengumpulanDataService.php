@@ -16,12 +16,12 @@ use App\Models\Roles;
 use App\Models\ShortlistVendor;
 use App\Models\TeamTeknisBalai;
 use App\Models\TenagaKerja;
-use App\Models\TenagaKerjaModel;
 use App\Models\TenagaKerjaSurvey;
 use App\Models\Users;
 use App\Models\VerifikasiValidasi;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
@@ -29,15 +29,45 @@ class PengumpulanDataService
 {
     public function storeTeamPengumpulanData($data)
     {
-        $teamPengumpulanData = new TeamTeknisBalai();
-        $teamPengumpulanData->nama_team = $data['nama_team'];
-        $teamPengumpulanData->user_id_ketua = $data['ketua_team'];
-        $teamPengumpulanData->user_id_sekretaris = $data['sekretaris_team'];
-        $teamPengumpulanData->user_id_anggota = $data['anggota'];
-        $teamPengumpulanData->url_sk_penugasan = $data['sk_penugasan'];
-        $teamPengumpulanData->save();
+        return DB::transaction(function () use ($data) {
+            // 1) Buat Team
+            $team = TeamTeknisBalai::create([
+                'nama_team'          => $data['nama_team'],
+                'user_id_ketua'      => $data['ketua_team'] ?? null,
+                'user_id_sekretaris' => $data['sekretaris_team'] ?? null,
+                'user_id_anggota'    => $data["anggota"],        // pastikan cast array di model
+                'url_sk_penugasan'   => $data['relative_path'],  // diisi relative pathnya
+            ]);
 
-        return $teamPengumpulanData;
+            // 2) Kumpulkan semua user id: ketua, sekretaris, anggota
+            $allMembers = array_merge(
+                [$data['ketua_team'] ?? null],
+                [$data['sekretaris_team'] ?? null],
+                $data['anggota'] ?? []
+            );
+
+            // Buang null/kosong, paksa ke string, dan unik (jaga urutan: ketua, sekretaris, lalu anggota)
+            $allMembers = array_values(array_unique(array_map('strval', array_filter($allMembers, function ($v) {
+                return $v !== null && $v !== '';
+            }))));
+
+            // 3) Update PerencanaanData: simpan sebagai JSON
+            // $idInformasiUmum = $data['informasi_umum_id']; // asumsi single value
+            // PerencanaanData::where('informasi_umum_id', '=', $idInformasiUmum)
+            //     ->update([
+            //         'team_teknis_balai_id' => json_encode($allMembers),
+            //     ]);
+
+            // 4) Update role & surat penugasan semua anggota (ketua+sekretaris+anggota)
+            if (!empty($allMembers)) {
+                Users::whereIn('id', $allMembers)->update([
+                    'id_roles'             => 2, // Tim Teknis Balai
+                    'surat_penugasan_url'  => $data['sk_penugasan'], // kirim full urlnya
+                ]);
+            }
+
+            return $team;
+        });
     }
 
     public function getAllTeamPengumpulanData()

@@ -148,40 +148,56 @@ class UserService
         return $result;
     }
 
-    public function listUserByNamaBalai($data)
+    public function listUserByNamaBalaiOrIdBalai($data)
     {
-        $balaiKey = $data['balai_key'];
+        // Bisa masuk sebagai 'balai_key' atau 'id_balai'
+        $idBalai   = $data['id_balai']   ?? $data['balai_key'] ?? null;
+        $namaBalai = $data['nama_balai'] ?? null;
 
-        // TODO: get data by balai and id_roles = 9 ('guest')
-        $users = Users::select([
-            'users.id AS user_id',
-            'users.nama_lengkap',
-            'users.nrp',
-            'satuan_kerja.nama AS satuan_kerja_name',
-            'users.surat_penugasan_url as surat_penugasan',
-            'roles.nama as role'
-        ])
+        // Minimal salah satu wajib ada — sebaiknya ini sudah divalidasi di controller
+        // (required_without) sebelum memanggil service.
+        // if (is_null($idBalai) && is_null($namaBalai)) { ... }
+
+        $ROLE_GUEST = 9;
+
+        $query = Users::query()
+            ->select([
+                'users.id AS user_id',
+                'users.nama_lengkap',
+                'users.nrp',
+                'satuan_kerja.nama AS satuan_kerja_name',
+                'users.surat_penugasan_url as surat_penugasan',
+                'roles.nama as role',
+            ])
             ->join('roles', 'users.id_roles', '=', 'roles.id')
             ->join('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
             ->join('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
             ->whereNotNull('users.email_verified_at')
-            ->where('users.id_roles', '!=', 1) // exclude superadmin
-            ->where('satuan_balai_kerja.id', $balaiKey) // filter by balai
-            ->where('users.id_roles', '=', '9') // filter by role 'guest'
-            ->get();
+            ->where('users.id_roles', '!=', 1)   // exclude superadmin
+            ->where('users.id_roles', '=', $ROLE_GUEST) // cuma guest
+            // Filter balai: pakai OR antar id/nama
+            ->where(function ($q) use ($idBalai, $namaBalai) {
+                if (!is_null($idBalai)) {
+                    $q->orWhere('satuan_balai_kerja.id', $idBalai);
+                }
+                if (!is_null($namaBalai)) {
+                    // pakai LIKE supaya fleksibel; ganti '=' bila butuh exact match
+                    $q->orWhere('satuan_balai_kerja.nama', 'LIKE', '%' . $namaBalai . '%');
+                }
+            });
 
-        $result = $users->map(function ($user) {
+        $users = $query->get();
+
+        return $users->map(function ($user) {
             return [
-                'user_id' => $user->user_id,
-                'nama_lengkap' => $user->nama_lengkap,
-                'nrp' => $user->nrp,
+                'user_id'          => $user->user_id,
+                'nama_lengkap'     => $user->nama_lengkap,
+                'nrp'              => $user->nrp,
                 'satuan_kerja_name' => $user->satuan_kerja_name,
-                'role' => $user->role,
-                'surat_penugasan' => $user->surat_penugasan
+                'role'             => $user->role,
+                'surat_penugasan'  => $user->surat_penugasan,
             ];
         })->values();
-
-        return $result;
     }
 }

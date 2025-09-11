@@ -158,7 +158,7 @@ class UsersController extends Controller
             'role'      => $role,
         ], [
             'balai_key' => 'required|string|min:1',
-            'role'      => ['required', 'string', Rule::in(['pengawas', 'petugas lapangan', 'pengolah data', 'tim teknis balai','guest'])],
+            'role'      => ['required', 'string', Rule::in(['pengawas', 'petugas lapangan', 'pengolah data', 'tim teknis balai', 'guest'])],
         ], [
             'balai_key.required' => 'Parameter balai_key wajib disertakan.',
             'balai_key.string'   => 'Parameter balai_key harus berupa teks.',
@@ -249,15 +249,14 @@ class UsersController extends Controller
     public function listUserByNamaBalai(Request $request)
     {
 
-        $balaiKey = $request->query('balai_key');
+        $namaBalai = $request->query('nama_balai');
 
-        $validator = Validator::make([
-            'balai_key' => $balaiKey,
+        $validator = Validator::make($request->only(['balai_key', 'nama_balai']), [
+            'balai_key'  => 'nullable|string|required_without:nama_balai',
+            'nama_balai' => 'nullable|string|required_without:balai_key',
         ], [
-            'balai_key' => 'required|string|min:1',
-        ], [
-            'balai_key.required' => 'Parameter balai_key wajib disertakan.',
-            'balai_key.string'   => 'Parameter balai_key harus berupa teks.',
+            'balai_key.required_without'  => 'Parameter balai_key wajib diisi jika nama_balai tidak ada.',
+            'nama_balai.required_without' => 'Parameter nama_balai wajib diisi jika balai_key tidak ada.',
         ]);
 
         if ($validator->fails()) {
@@ -269,10 +268,10 @@ class UsersController extends Controller
         }
 
         $data = [
-            'balai_key' => $balaiKey,
+            'nama_balai' => $namaBalai,
         ];
 
-        $result = $this->userService->listUserByNamaBalai($data);
+        $result = $this->userService->listUserByNamaBalaiOrIdBalai($data);
 
         if (!$result) {
             return response()->json([

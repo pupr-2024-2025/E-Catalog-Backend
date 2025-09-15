@@ -159,9 +159,9 @@ public function generateLinkKuisioner($id)
 
             return response()->json([
                 'status'  => 'success',
-                'message' => config('constants.SUCCESS_MESSAGE_GET'),
+                'message' => config('constants.SUCCESS_MESSAGE_SAVE'),
                 'data'    => $response,
-            ]);
+            ],201);
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',

@@ -42,7 +42,6 @@ class VerifySipastiJwt
             }
 
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
-
         } catch (ExpiredException) {
             return response()->json(['error' => 'Token expired'], Response::HTTP_UNAUTHORIZED);
         } catch (BeforeValidException) {
@@ -89,19 +88,20 @@ class VerifySipastiJwt
 
         $cacheKey = 'user_profile_model:' . ($userIdSipasti ?: 'email:' . $email);
         $model = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($userIdSipasti, $email, $profile, $roleId) {
-            $balaiKerja = \App\Models\SatuanBalaiKerja::where('nama', 'like', "%{$profile['unit_kerja']}%")->first();
+            $balaiKerja = \App\Models\SatuanBalaiKerja::where('nama', 'like', "%{$profile['nama_balai']}%")->first();
 
             $where = $userIdSipasti !== '' ? ['user_id_sipasti' => $userIdSipasti] : ['email' => $email];
             return \App\Models\Users::updateOrCreate(
                 $where,
                 [
-                    'nama_lengkap'  => $profile['name'],
+                    'nama_lengkap'  => $profile['nama'],
                     'email'         => $email,
                     'no_handphone'  => isset($profile['phone']) ? $profile['phone'] : null,
                     'nik'           => isset($profile['detail']) ? $profile['detail']['nik'] : $profile['nik'] ?? null,
                     'nrp'           => isset($profile['detail']) ? $profile['detail']['nrp'] : $profile['nrp'] ?? null,
                     'nip'           => isset($profile['detail']) ? $profile['detail']['nip'] : $profile['nip'] ?? null,
-                    'id_roles'       => $roleId,
+                    'id_roles'       => $roleId, // TODO: Bisa di fix karena role di sipasti tidak sinkron dengan katalog
+                    'email_verified_at' => now(),
                     'status'        => 'active',
                     'balai_kerja_id' => $balaiKerja ? $balaiKerja->id : null,
                     'user_id_sipasti' => $userIdSipasti

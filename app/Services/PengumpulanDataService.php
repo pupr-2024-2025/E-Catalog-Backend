@@ -715,24 +715,24 @@ class PengumpulanDataService
         if ($table == 'material') {
             return MaterialSurvey::updateOrCreate(
                 [
-                    'material_id' => $data['id'],
+                    'material_id' => $data['material_id'] ?? $data['id'],
                 ],
                 [
-                    'satuan_setempat' => $data['satuan_setempat'],
-                    'satuan_setempat_panjang' => $data['satuan_setempat_panjang'],
-                    'satuan_setempat_lebar' => $data['satuan_setempat_lebar'],
-                    'satuan_setempat_tinggi' => $data['satuan_setempat_tinggi'],
-                    'konversi_satuan_setempat' => $data['konversi_satuan_setempat'],
-                    'harga_satuan_setempat' => $data['harga_satuan_setempat'],
-                    'harga_konversi_satuan_setempat' => $data['harga_konversi_satuan_setempat'],
-                    'harga_khusus' => $data['harga_khusus'],
-                    'keterangan' => $data['keterangan'],
+                    'satuan_setempat'                => $data['satuan_setempat'] ?? null,
+                    'satuan_setempat_panjang'        => $data['satuan_setempat_panjang'] ?? null,
+                    'satuan_setempat_lebar'          => $data['satuan_setempat_lebar'] ?? null,
+                    'satuan_setempat_tinggi'         => $data['satuan_setempat_tinggi'] ?? null,
+                    'konversi_satuan_setempat'       => $data['konversi_satuan_setempat'] ?? null,
+                    'harga_satuan_setempat'          => $data['harga_satuan_setempat'] ?? null,
+                    'harga_konversi_satuan_setempat' => $data['harga_konversi_satuan_setempat'] ?? null,
+                    'harga_khusus'                   => $data['harga_khusus'] ?? null,
+                    'keterangan'                     => $data['keterangan'] ?? null,
                 ]
             );
         } elseif ($table == 'peralatan') {
             return PeralatanSurvey::updateOrCreate(
                 [
-                    'peralatan_id' => $data['id'],
+                    'peralatan_id' => $data['peralatan_id'] ?? $data['id'],
                 ],
                 [
                     'satuan_setempat' => $data['satuan_setempat'],
@@ -745,12 +745,12 @@ class PengumpulanDataService
         } elseif ($table == 'tenaga_kerja') {
             return TenagaKerjaSurvey::updateOrCreate(
                 [
-                    'tenaga_kerja_id' => $data['id'],
+                    'tenaga_kerja_id' => $data['tenaga_kerja_id'] ?? $data['id'],
                 ],
                 [
-                    'harga_per_satuan_setempat' => $data['harga_per_satuan_setempat'],
-                    'harga_konversi_perjam' => $data['harga_konversi_perjam'],
-                    'keterangan' => $data['keterangan'],
+                    'harga_per_satuan_setempat' => $data['harga_per_satuan_setempat'] ?? null,
+                    'harga_konversi_perjam'     => $data['harga_konversi_perjam'] ?? null,
+                    'keterangan'                => $data['keterangan'] ?? null,
                 ]
             );
         }

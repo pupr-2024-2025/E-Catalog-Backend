@@ -16,6 +16,7 @@ class MaterialSurvey extends Model
         'satuan_setempat_panjang',
         'satuan_setempat_lebar',
         'satuan_setempat_tinggi',
+        'konversi_satuan_setempat',
         'harga_satuan_setempat',
         'harga_konversi_satuan_setempat',
         'harga_khusus',

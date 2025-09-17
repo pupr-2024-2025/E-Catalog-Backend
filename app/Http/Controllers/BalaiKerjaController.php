@@ -10,6 +10,7 @@ class BalaiKerjaController extends Controller
 {
     public function getAllSatuanBalaiKerja()
     {
+        //test
         $data = SatuanBalaiKerja::select('id', 'nama', 'unor_id')->get();
 
         if (count($data)) {

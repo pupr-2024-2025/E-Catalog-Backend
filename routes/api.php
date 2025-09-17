@@ -40,9 +40,9 @@ Route::get('/hello-nginx-vm', function () {
 });
 
 Route::post('/store-user', [UsersController::class, 'store']);
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout', [LoginController::class, 'logout']);
-Route::post('/refresh', [LoginController::class, 'refresh']);
+// Route::post('/login', [LoginController::class, 'login']);
+// Route::post('/logout', [LoginController::class, 'logout']);
+// Route::post('/refresh', [LoginController::class, 'refresh']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
@@ -50,7 +50,7 @@ Route::get('/get-balai-kerja', [BalaiKerjaController::class, 'getAllSatuanBalaiK
 Route::get('/get-satuan-kerja', [SatuanKerjaController::class, 'getAllSatuanKerja']);
 
 // TODO: please implements the jwt-code from SSO Sipasti
-Route::get('/check-role', [LoginController::class, 'checkRole']);
+// Route::get('/check-role', [LoginController::class, 'checkRole']);
 
 Route::get('/list-role', [UsersController::class, 'listRole']);
 Route::get('/user/list-user-verif', [UsersController::class, 'getListUserVerification']);

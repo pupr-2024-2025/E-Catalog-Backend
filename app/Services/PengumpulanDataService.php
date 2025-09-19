@@ -639,7 +639,6 @@ class PengumpulanDataService
                     'provincies_id'            => isset($r->provincies_id) ? (int)$r->provincies_id : null,
                     'cities_id'                => isset($r->cities_id) ? (int)$r->cities_id : null,
 
-                    // survey
                     'harga_per_satuan_setempat' => isset($r->harga_per_satuan_setempat) ? (float)$r->harga_per_satuan_setempat : null,
                     'harga_konversi_perjam'     => isset($r->harga_konversi_perjam) ? (float)$r->harga_konversi_perjam : null,
                     'keterangan'                => $r->keterangan ?? null,
@@ -735,7 +734,7 @@ class PengumpulanDataService
             ],
             [
                 'status' => config('constants.STATUS_PEMERIKSAAN'),
-                'doc_berita_acara' => $filePath,
+                // 'doc_berita_acara' => $filePath,
             ]
         );
     }
@@ -748,7 +747,7 @@ class PengumpulanDataService
             ],
             [
                 'status' => $status,
-                'doc_berita_acara' => $filePath,
+                // 'doc_berita_acara' => $filePath,
             ]
         );
     }

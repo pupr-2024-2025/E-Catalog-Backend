@@ -724,39 +724,43 @@ class PengumpulanDataController extends Controller
     {
         $rules = [
             'identifikasi_kebutuhan_id' => 'required',
-            'data_vendor_id' => 'required',
+            'data_vendor_id'            => 'required',
             'berita_acara'              => 'nullable|file|mimes:pdf,doc,docx|max:2048',
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => $validator->errors(),
-                'data' => []
+                'data'    => []
             ]);
         }
 
         try {
+            $filePath = null;
+
             if ($request->hasFile('berita_acara')) {
-                $filePath = $request->file('berita_acara')->store('berita_acara');
+                $filePath = $request->file('berita_acara')->store('berita_acara', 'public');
             }
 
             $this->pengumpulanDataService->updateDataVerifikasiPengawas($request);
             $this->pengumpulanDataService->pemeriksaanDataList($request);
 
-            $data = $this->pengumpulanDataService->changeStatusVerification($request['identifikasi_kebutuhan_id'], $filePath);
-            if (isset($data)) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Data berhasil disimpan',
-                    'data' => $data
-                ]);
-            }
+            $data = $this->pengumpulanDataService->changeStatusVerification(
+                $request['identifikasi_kebutuhan_id'],
+                $filePath
+            );
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data berhasil disimpan',
+                'data'    => $data
+            ]);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Gagal menyimpan data',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ]);
         }
     }

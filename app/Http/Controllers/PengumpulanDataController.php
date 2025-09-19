@@ -725,7 +725,7 @@ class PengumpulanDataController extends Controller
         $rules = [
             'identifikasi_kebutuhan_id' => 'required',
             'data_vendor_id' => 'required',
-            'berita_acara' => 'required|file|mimes:pdf,doc,docx|max:2048'
+            'berita_acara'              => 'nullable|file|mimes:pdf,doc,docx|max:2048',
         ];
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {

@@ -555,6 +555,8 @@ class PengumpulanDataService
             ? Carbon::parse($kps->tanggal_pengawasan)->format('d-m-Y')
             : ($vendor->sv_tanggal_pengawasan ? Carbon::parse($vendor->sv_tanggal_pengawasan)->format('d-m-Y') : null);
 
+        $catatanBlokV = $kps->catatan_blok_v ?? null;
+
         $materialIds    = $vendor->material_id ? json_decode($vendor->material_id, true) : [];
         $peralatanIds   = $vendor->peralatan_id ? json_decode($vendor->peralatan_id, true) : [];
         $tenagaKerjaIds = $vendor->tenaga_kerja_id ? json_decode($vendor->tenaga_kerja_id, true) : [];
@@ -688,7 +690,7 @@ class PengumpulanDataService
             'data_vendor_id'           => (string) $vendor->vendor_id,
             'tanggal_survei'           => $tanggalSurvei,
             'tanggal_pengawasan'       => $tanggalPengawasan,
-            'catatan_blok_v'           => null,
+            'catatan_blok_v'     => $catatanBlokV,
             'material'                 => $material,
             'peralatan'                => $peralatan,
             'tenaga_kerja'             => $tenagaKerja,
@@ -902,7 +904,7 @@ class PengumpulanDataService
             [
                 'petugas_lapangan_id'    => $data['user_id_petugas_lapangan'] ?? null,
                 'pengawas_id'            => $data['user_id_pengawas'] ?? null,
-                'tanggal_survey'         => $tglSurvei,
+                'tanggal_survei'         => $tglSurvei,
                 'tanggal_pengawasan'     => $tglPengawasan,
                 'nama_pemberi_informasi' => $data['nama_pemberi_informasi'] ?? null,
                 'catatan_blok_v'         => $data['catatan_blok_v'] ?? null,

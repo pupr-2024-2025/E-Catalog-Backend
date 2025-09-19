@@ -8,7 +8,6 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('keterangan_petugas_survey', function (Blueprint $table) {
-            // ubah nama kolom tanggal_survey -> tanggal_survei
             $table->renameColumn('tanggal_survey', 'tanggal_survei');
             $table->renameColumn('catatan', 'catatan_blok_v');
         });

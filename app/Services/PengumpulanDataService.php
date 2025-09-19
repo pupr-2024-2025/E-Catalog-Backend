@@ -563,117 +563,90 @@ class PengumpulanDataService
 
         $material = [];
         if (!empty($materialIds)) {
-            $rows = Material::select(
-                'material.id',
-                'material.id AS material_id',
-                'ms.satuan_setempat',
-                'ms.satuan_setempat_panjang',
-                'ms.satuan_setempat_lebar',
-                'ms.satuan_setempat_tinggi',
-                'ms.konversi_satuan_setempat',
-                'ms.harga_satuan_setempat',
-                'ms.harga_konversi_satuan_setempat',
-                'ms.harga_khusus',
-                'ms.keterangan'
-            )
-                ->leftJoin('material_survey as ms', 'material.id', '=', 'ms.material_id')
-                ->whereIn('material.id', $materialIds)
-                ->get();
+            $rows = $this->getIdentifikasiSurvey('material', $vendor->material_id);
 
             foreach ($rows as $r) {
-                $hasSurvey = $r->satuan_setempat !== null
-                    || $r->satuan_setempat_panjang !== null
-                    || $r->satuan_setempat_lebar !== null
-                    || $r->satuan_setempat_tinggi !== null
-                    || $r->konversi_satuan_setempat !== null
-                    || $r->harga_satuan_setempat !== null
-                    || $r->harga_konversi_satuan_setempat !== null
-                    || $r->harga_khusus !== null
-                    || $r->keterangan !== null;
+                $material[] = [
+                    'id'                       => (int) $r->id,
+                    'material_id'              => (int) $r->id, // jaga kompatibilitas FE kamu
+                    'identifikasi_kebutuhan_id' => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
+                    'nama_material'            => $r->nama_material ?? null,
+                    'satuan'                   => $r->satuan ?? null,
+                    'spesifikasi'              => $r->spesifikasi ?? null,
+                    'ukuran'                   => $r->ukuran ?? null,
+                    'kodefikasi'               => $r->kodefikasi ?? null,
+                    'kelompok_material'        => $r->kelompok_material ?? null,
+                    'jumlah_kebutuhan'         => $r->jumlah_kebutuhan ?? null,
+                    'merk'                     => $r->merk ?? null,
+                    'provincies_id'            => isset($r->provincies_id) ? (int)$r->provincies_id : null,
+                    'cities_id'                => isset($r->cities_id) ? (int)$r->cities_id : null,
 
-                if ($hasSurvey) {
-                    $material[] = [
-                        'id'                                => (int) $r->id,
-                        'material_id'                       => (int) $r->material_id,
-                        'satuan_setempat'                   => $r->satuan_setempat,
-                        'satuan_setempat_panjang'           => $r->satuan_setempat_panjang !== null ? (float)$r->satuan_setempat_panjang : null,
-                        'satuan_setempat_lebar'             => $r->satuan_setempat_lebar !== null ? (float)$r->satuan_setempat_lebar : null,
-                        'satuan_setempat_tinggi'            => $r->satuan_setempat_tinggi !== null ? (float)$r->satuan_setempat_tinggi : null,
-                        'konversi_satuan_setempat'          => $r->konversi_satuan_setempat,
-                        'harga_satuan_setempat'             => $r->harga_satuan_setempat !== null ? (float)$r->harga_satuan_setempat : null,
-                        'harga_konversi_satuan_setempat'    => $r->harga_konversi_satuan_setempat !== null ? (float)$r->harga_konversi_satuan_setempat : null,
-                        'harga_khusus'                      => $r->harga_khusus !== null ? (float)$r->harga_khusus : null,
-                        'keterangan'                         => $r->keterangan,
-                    ];
-                }
+                    'satuan_setempat'                => $r->satuan_setempat ?? null,
+                    'satuan_setempat_panjang'        => isset($r->satuan_setempat_panjang) ? (float)$r->satuan_setempat_panjang : null,
+                    'satuan_setempat_lebar'          => isset($r->satuan_setempat_lebar) ? (float)$r->satuan_setempat_lebar : null,
+                    'satuan_setempat_tinggi'         => isset($r->satuan_setempat_tinggi) ? (float)$r->satuan_setempat_tinggi : null,
+                    'konversi_satuan_setempat'       => $r->konversi_satuan_setempat ?? null,
+                    'harga_satuan_setempat'          => isset($r->harga_satuan_setempat) ? (float)$r->harga_satuan_setempat : null,
+                    'harga_konversi_satuan_setempat' => isset($r->harga_konversi_satuan_setempat) ? (float)$r->harga_konversi_satuan_setempat : null,
+                    'harga_khusus'                   => isset($r->harga_khusus) ? (float)$r->harga_khusus : null,
+                    'keterangan'                     => $r->keterangan ?? null,
+                ];
             }
         }
 
         $peralatan = [];
         if (!empty($peralatanIds)) {
-            $rows = Peralatan::select(
-                'peralatan.id',
-                'peralatan.id AS peralatan_id',
-                'ps.satuan_setempat',
-                'ps.harga_sewa_satuan_setempat',
-                'ps.harga_sewa_konversi',
-                'ps.harga_pokok',
-                'ps.keterangan'
-            )
-                ->leftJoin('peralatan_survey as ps', 'peralatan.id', '=', 'ps.peralatan_id')
-                ->whereIn('peralatan.id', $peralatanIds)
-                ->get();
+            $rows = $this->getIdentifikasiSurvey('peralatan', $vendor->peralatan_id);
 
             foreach ($rows as $r) {
-                $hasSurvey = $r->satuan_setempat !== null
-                    || $r->harga_sewa_satuan_setempat !== null
-                    || $r->harga_sewa_konversi !== null
-                    || $r->harga_pokok !== null
-                    || $r->keterangan !== null;
+                $peralatan[] = [
+                    'id'                       => (int) $r->id,
+                    'peralatan_id'             => (int) $r->id,
+                    'identifikasi_kebutuhan_id' => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
+                    'nama_peralatan'           => $r->nama_peralatan ?? null,
+                    'satuan'                   => $r->satuan ?? null,
+                    'spesifikasi'              => $r->spesifikasi ?? null,
+                    'kapasitas'                => $r->kapasitas ?? null,
+                    'kodefikasi'               => $r->kodefikasi ?? null,
+                    'kelompok_peralatan'       => $r->kelompok_peralatan ?? null,
+                    'jumlah_kebutuhan'         => $r->jumlah_kebutuhan ?? null,
+                    'merk'                     => $r->merk ?? null,
+                    'provincies_id'            => isset($r->provincies_id) ? (int)$r->provincies_id : null,
+                    'cities_id'                => isset($r->cities_id) ? (int)$r->cities_id : null,
 
-                if ($hasSurvey) {
-                    $peralatan[] = [
-                        'id'                           => (int) $r->id,
-                        'peralatan_id'                 => (int) $r->peralatan_id,
-                        'satuan_setempat'              => $r->satuan_setempat,
-                        'harga_sewa_satuan_setempat'   => $r->harga_sewa_satuan_setempat !== null ? (float)$r->harga_sewa_satuan_setempat : null,
-                        'harga_sewa_konversi'          => $r->harga_sewa_konversi !== null ? (float)$r->harga_sewa_konversi : null,
-                        'harga_pokok'                  => $r->harga_pokok !== null ? (float)$r->harga_pokok : null,
-                        'keterangan'                   => $r->keterangan,
-                    ];
-                }
+                    'satuan_setempat'              => $r->satuan_setempat ?? null,
+                    'harga_sewa_satuan_setempat'   => isset($r->harga_sewa_satuan_setempat) ? (float)$r->harga_sewa_satuan_setempat : null,
+                    'harga_sewa_konversi'          => isset($r->harga_sewa_konversi) ? (float)$r->harga_sewa_konversi : null,
+                    'harga_pokok'                  => isset($r->harga_pokok) ? (float)$r->harga_pokok : null,
+                    'keterangan'                   => $r->keterangan ?? null,
+                ];
             }
         }
 
         $tenagaKerja = [];
         if (!empty($tenagaKerjaIds)) {
-            $rows = TenagaKerja::select(
-                'tenaga_kerja.id',
-                'tenaga_kerja.id AS tenaga_kerja_id',
-                'tks.harga_per_satuan_setempat',
-                'tks.harga_konversi_perjam',
-                'tks.keterangan'
-            )
-                ->leftJoin('tenaga_kerja_survey as tks', 'tenaga_kerja.id', '=', 'tks.tenaga_kerja_id')
-                ->whereIn('tenaga_kerja.id', $tenagaKerjaIds)
-                ->get();
+            $rows = $this->getIdentifikasiSurvey('tenaga_kerja', $vendor->tenaga_kerja_id);
 
             foreach ($rows as $r) {
-                $hasSurvey = $r->harga_per_satuan_setempat !== null
-                    || $r->harga_konversi_perjam !== null
-                    || $r->keterangan !== null;
+                $tenagaKerja[] = [
+                    'id'                       => (int) $r->id,
+                    'tenaga_kerja_id'          => (int) $r->id,
+                    'identifikasi_kebutuhan_id' => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
+                    'jenis_tenaga_kerja'       => $r->jenis_tenaga_kerja ?? null,
+                    'satuan'                   => $r->satuan ?? null,
+                    'jumlah_kebutuhan'         => $r->jumlah_kebutuhan ?? null,
+                    'kodefikasi'               => $r->kodefikasi ?? null,
+                    'provincies_id'            => isset($r->provincies_id) ? (int)$r->provincies_id : null,
+                    'cities_id'                => isset($r->cities_id) ? (int)$r->cities_id : null,
 
-                if ($hasSurvey) {
-                    $tenagaKerja[] = [
-                        'id'                         => (int) $r->id,
-                        'tenaga_kerja_id'           => (int) $r->tenaga_kerja_id,
-                        'harga_per_satuan_setempat' => $r->harga_per_satuan_setempat !== null ? (float)$r->harga_per_satuan_setempat : null,
-                        'harga_konversi_perjam'     => $r->harga_konversi_perjam !== null ? (float)$r->harga_konversi_perjam : null,
-                        'keterangan'                => $r->keterangan,
-                    ];
-                }
+                    // survey
+                    'harga_per_satuan_setempat' => isset($r->harga_per_satuan_setempat) ? (float)$r->harga_per_satuan_setempat : null,
+                    'harga_konversi_perjam'     => isset($r->harga_konversi_perjam) ? (float)$r->harga_konversi_perjam : null,
+                    'keterangan'                => $r->keterangan ?? null,
+                ];
             }
         }
+
 
         $kategoriVendor = KategoriVendor::whereIn(
             'id',

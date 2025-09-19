@@ -898,19 +898,18 @@ class PengumpulanDataService
             : null;
 
         return KeteranganPetugasSurvey::updateOrCreate(
-            [
-                'identifikasi_kebutuhan_id' => $data['identifikasi_kebutuhan_id'],
-            ],
+            ['identifikasi_kebutuhan_id' => $data['identifikasi_kebutuhan_id']],
             [
                 'petugas_lapangan_id'    => $data['user_id_petugas_lapangan'] ?? null,
                 'pengawas_id'            => $data['user_id_pengawas'] ?? null,
                 'tanggal_survey'         => $tglSurvei,
                 'tanggal_pengawasan'     => $tglPengawasan,
                 'nama_pemberi_informasi' => $data['nama_pemberi_informasi'] ?? null,
-                'catatan'         => $data['catatan_blok_v'] ?? null,
+                'catatan_blok_v'         => $data['catatan_blok_v'] ?? null,
             ]
         );
     }
+
 
 
     public function changeStatus($id, $status)

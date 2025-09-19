@@ -511,20 +511,108 @@ class PengumpulanDataService
         return collect();
     }
 
-    public function getEntriData($shortlistId)
+    public function getEntriDataSurveyKuisioner($incomingId)
     {
-        $perencanaan = PerencanaanData::where('shortlist_vendor_id', $shortlistId)->first();
+        $identId = $this->resolveIdentifikasiId($incomingId);
+        if (!$identId) {
+            return null;
+        }
+
+        $perencanaan = PerencanaanData::where('shortlist_vendor_id', $identId)->first();
         if (!$perencanaan) {
             return null;
         }
 
-        $ket = KeteranganPetugasSurvey::where('identifikasi_kebutuhan_id', $shortlistId)->first();
+        $ket = KeteranganPetugasSurvey::where('identifikasi_kebutuhan_id', $identId)->first();
+        $petugasLap = $this->safeUser($ket?->petugas_lapangan_id);
+        $pengawas   = $this->safeUser($ket?->pengawas_id);
 
-        $petugasLap = $this->safeUser($ket->petugas_lapangan_id ?? null);
-        $pengawas   = $this->safeUser($ket->pengawas_id ?? null);
+        [$materialSurvey, $peralatanSurvey, $tenagaSurvey] = $this->fetchSurveyRows($identId);
 
-        $materialSurvey = MaterialSurvey::where('identifikasi_kebutuhan_id', $shortlistId)
-            ->get([
+        $fixIdent = function ($rows, int $identId) {
+            return collect($rows)->map(function ($row) use ($identId) {
+                $arr = is_array($row) ? $row : $row->toArray();
+                $arr['identifikasi_kebutuhan_id'] = $identId;
+                foreach (['provincies_id', 'cities_id'] as $k) {
+                    if (array_key_exists($k, $arr)) $arr[$k] = is_null($arr[$k]) ? null : (int) $arr[$k];
+                }
+                return $arr;
+            })->values();
+        };
+
+        $verifikasi = VerifikasiValidasi::where('shortlist_vendor_id', $identId)
+            ->where('data_vendor_id', $perencanaan->data_vendor_id)
+            ->get(['data_vendor_id', 'shortlist_vendor_id', 'item_number', 'status_pemeriksaan', 'verified_by']);
+
+        $kategoriStr = null;
+        if (!empty($perencanaan->kategori_vendor_id)) {
+            $ids = is_string($perencanaan->kategori_vendor_id)
+                ? json_decode($perencanaan->kategori_vendor_id, true)
+                : $perencanaan->kategori_vendor_id;
+            if (is_array($ids) && count($ids)) {
+                $kategoriStr = KategoriVendor::whereIn('id', $ids)->pluck('nama_kategori_vendor')->implode(', ');
+            }
+        }
+
+        $fmt = fn(?string $ymd) => $ymd ? Carbon::parse($ymd)->format('d-m-Y') : null;
+
+        return [
+            'data_vendor_id'            => $perencanaan->data_vendor_id ?? null,
+            'identifikasi_kebutuhan_id' => $identId,
+            'provinsi'                  => $perencanaan->provinsi ?? $perencanaan->nama_provinsi ?? null,
+            'kota'                      => $perencanaan->kota ?? $perencanaan->nama_kota ?? null,
+            'nama_responden'            => $perencanaan->nama_responden ?? $perencanaan->nama_vendor ?? null,
+            'alamat'                    => $perencanaan->alamat ?? null,
+            'no_telepon'                => $perencanaan->no_telepon ?? null,
+            'kategori_responden'        => $kategoriStr,
+            'keterangan_petugas_lapangan' => [
+                'nama_petugas_lapangan' => $petugasLap['nama'] ?? null,
+                'nip_petugas_lapangan'  => $petugasLap['nip'] ?? null,
+                'tanggal_survei'        => $fmt($ket?->tanggal_survey),
+                'nama_pengawas'         => $pengawas['nama'] ?? null,
+                'nip_pengawas'          => $pengawas['nip'] ?? null,
+                'tanggal_pengawasan'    => $fmt($ket?->tanggal_pengawasan),
+            ],
+            'keterangan_pemberi_informasi' => [
+                'nama_pemberi_informasi' => $ket?->nama_pemberi_informasi,
+                'tanda_tangan_responden' => null,
+            ],
+            'material'           => $fixIdent($materialSurvey, $identId),
+            'peralatan'          => $fixIdent($peralatanSurvey, $identId),
+            'tenaga_kerja'       => $fixIdent($tenagaSurvey, $identId),
+            'verifikasi_dokumen' => $verifikasi,
+        ];
+    }
+
+    private function resolveIdentifikasiId($incomingId): ?int
+    {
+        $exists = PerencanaanData::where('shortlist_vendor_id', $incomingId)->exists();
+        if ($exists) return (int) $incomingId;
+
+        $sv = ShortlistVendor::select('shortlist_vendor_id')->where('id', $incomingId)->first();
+        if ($sv && $sv->shortlist_vendor_id) return (int) $sv->shortlist_vendor_id;
+
+        return null;
+    }
+
+    /**
+     * Ambil nama & NIP user secara aman.
+     *
+     * @param mixed $id
+     * @return array|null { nama: string, nip: string } atau null jika tidak ada.
+     */
+    private function safeUser($id): ?array
+    {
+        if (!$id) return null;
+        $u = Users::select('nama_lengkap as nama', 'nrp as nip')->find($id);
+        return $u ? ['nama' => $u->nama, 'nip' => $u->nip] : null;
+    }
+
+    private function fetchSurveyRows(int $identId): array
+    {
+        // MATERIAL
+        try {
+            $materialSurvey = MaterialSurvey::where('identifikasi_kebutuhan_id', $identId)->get([
                 'id',
                 'material_id',
                 'satuan_setempat',
@@ -539,9 +627,30 @@ class PengumpulanDataService
                 'created_at',
                 'updated_at',
             ]);
+        } catch (\Throwable $e) {
+            $materialSurvey = MaterialSurvey::query()
+                ->join('material', 'material.id', '=', 'material_survey.material_id')
+                ->where('material.identifikasi_kebutuhan_id', $identId)
+                ->get([
+                    'material_survey.id',
+                    'material_survey.material_id',
+                    'material_survey.satuan_setempat',
+                    'material_survey.satuan_setempat_panjang',
+                    'material_survey.satuan_setempat_lebar',
+                    'material_survey.satuan_setempat_tinggi',
+                    'material_survey.konversi_satuan_setempat',
+                    'material_survey.harga_satuan_setempat',
+                    'material_survey.harga_konversi_satuan_setempat',
+                    'material_survey.harga_khusus',
+                    'material_survey.keterangan',
+                    'material_survey.created_at',
+                    'material_survey.updated_at',
+                ]);
+        }
 
-        $peralatanSurvey = PeralatanSurvey::where('identifikasi_kebutuhan_id', $shortlistId)
-            ->get([
+        // PERALATAN
+        try {
+            $peralatanSurvey = PeralatanSurvey::where('identifikasi_kebutuhan_id', $identId)->get([
                 'id',
                 'peralatan_id',
                 'satuan_setempat',
@@ -552,9 +661,26 @@ class PengumpulanDataService
                 'created_at',
                 'updated_at',
             ]);
+        } catch (\Throwable $e) {
+            $peralatanSurvey = PeralatanSurvey::query()
+                ->join('peralatan', 'peralatan.id', '=', 'peralatan_survey.peralatan_id')
+                ->where('peralatan.identifikasi_kebutuhan_id', $identId)
+                ->get([
+                    'peralatan_survey.id',
+                    'peralatan_survey.peralatan_id',
+                    'peralatan_survey.satuan_setempat',
+                    'peralatan_survey.harga_sewa_satuan_setempat',
+                    'peralatan_survey.harga_sewa_konversi',
+                    'peralatan_survey.harga_pokok',
+                    'peralatan_survey.keterangan',
+                    'peralatan_survey.created_at',
+                    'peralatan_survey.updated_at',
+                ]);
+        }
 
-        $tenagaSurvey = TenagaKerjaSurvey::where('identifikasi_kebutuhan_id', $shortlistId)
-            ->get([
+        // TENAGA KERJA
+        try {
+            $tenagaSurvey = TenagaKerjaSurvey::where('identifikasi_kebutuhan_id', $identId)->get([
                 'id',
                 'tenaga_kerja_id',
                 'harga_per_satuan_setempat',
@@ -563,43 +689,22 @@ class PengumpulanDataService
                 'created_at',
                 'updated_at',
             ]);
-
-        $kategoriStr = null;
-        if (!empty($perencanaan->kategori_vendor_id)) {
-            $ids = is_string($perencanaan->kategori_vendor_id)
-                ? json_decode($perencanaan->kategori_vendor_id, true)
-                : $perencanaan->kategori_vendor_id;
-            if (is_array($ids) && count($ids)) {
-                $kategoriVendor = KategoriVendor::whereIn('id', $ids)->pluck('nama_kategori_vendor');
-                $kategoriStr = $kategoriVendor->implode(', ');
-            }
+        } catch (\Throwable $e) {
+            $tenagaSurvey = TenagaKerjaSurvey::query()
+                ->join('tenaga_kerja', 'tenaga_kerja.id', '=', 'tenaga_kerja_survey.tenaga_kerja_id')
+                ->where('tenaga_kerja.identifikasi_kebutuhan_id', $identId)
+                ->get([
+                    'tenaga_kerja_survey.id',
+                    'tenaga_kerja_survey.tenaga_kerja_id',
+                    'tenaga_kerja_survey.harga_per_satuan_setempat',
+                    'tenaga_kerja_survey.harga_konversi_perjam',
+                    'tenaga_kerja_survey.keterangan',
+                    'tenaga_kerja_survey.created_at',
+                    'tenaga_kerja_survey.updated_at',
+                ]);
         }
 
-        return [
-            'data_vendor_id'            => $perencanaan->data_vendor_id ?? null,
-            'identifikasi_kebutuhan_id' => $shortlistId,
-            'provinsi'                  => $perencanaan->provinsi ?? $perencanaan->nama_provinsi ?? null,
-            'kota'                      => $perencanaan->kota ?? $perencanaan->nama_kota ?? null,
-            'nama_responden'            => $perencanaan->nama_responden ?? $perencanaan->nama_vendor ?? null,
-            'alamat'                    => $perencanaan->alamat ?? null,
-            'no_telepon'                => $perencanaan->no_telepon ?? null,
-            'kategori_responden'        => $kategoriStr,
-            'keterangan_petugas_lapangan' => [
-                'nama_petugas_lapangan' => $petugasLap['nama'] ?? null,
-                'nip_petugas_lapangan'  => $petugasLap['nip'] ?? null,
-                'tanggal_survei'        => $ket?->tanggal_survey,
-                'nama_pengawas'         => $pengawas['nama'] ?? null,
-                'nip_pengawas'          => $pengawas['nip'] ?? null,
-                'tanggal_pengawasan'    => $ket?->tanggal_pengawasan,
-            ],
-            'keterangan_pemberi_informasi' => [
-                'nama_pemberi_informasi' => $ket?->nama_pemberi_informasi,
-                'tanda_tangan_responden' => null,
-            ],
-            'material'     => $materialSurvey,
-            'peralatan'    => $peralatanSurvey,
-            'tenaga_kerja' => $tenagaSurvey,
-        ];
+        return [$materialSurvey, $peralatanSurvey, $tenagaSurvey];
     }
 
     public function updateDataVerifikasiPengawas($data)
@@ -842,12 +947,5 @@ class PengumpulanDataService
         )->where('data_vendor_id', $dataVendorId)
             ->where('shortlist_vendor_id', $shortlistVendorId)->get();
         return $data;
-    }
-
-    private function safeUser($id): ?array
-    {
-        if (!$id) return null;
-        $u = Users::select('nama_lengkap as nama', 'nrp as nip')->find($id);
-        return $u ? ['nama' => $u->nama, 'nip' => $u->nip] : null;
     }
 }

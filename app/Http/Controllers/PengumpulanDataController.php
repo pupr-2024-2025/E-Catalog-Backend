@@ -166,7 +166,7 @@ class PengumpulanDataController extends Controller
 
         $statusPengumpulan = config("constants.STATUS_PENGUMPULAN");
 
-        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai,$statusPengumpulan);
+        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai, $statusPengumpulan);
         if (!$data) {
             return response()->json([
                 'status' => 'success',

@@ -889,19 +889,29 @@ class PengumpulanDataService
 
     public function storeKeteranganPetugasSurvey($data)
     {
+        $tglSurvei = isset($data['tanggal_survei']) && $data['tanggal_survei']
+            ? Carbon::createFromFormat('d-m-Y', $data['tanggal_survei'])->format('Y-m-d')
+            : null;
+
+        $tglPengawasan = isset($data['tanggal_pengawasan']) && $data['tanggal_pengawasan']
+            ? Carbon::createFromFormat('d-m-Y', $data['tanggal_pengawasan'])->format('Y-m-d')
+            : null;
+
         return KeteranganPetugasSurvey::updateOrCreate(
             [
                 'identifikasi_kebutuhan_id' => $data['identifikasi_kebutuhan_id'],
             ],
             [
-                'petugas_lapangan_id' => $data['user_id_petugas_lapangan'],
-                'pengawas_id' => $data['user_id_pengawas'],
-                'nama_pemberi_informasi' => $data['nama_pemberi_informasi'],
-                'tanggal_survei' => Carbon::createFromFormat('d-m-Y', $data['tanggal_survei'])->format('Y-m-d'),
-                'tanggal_pengawasan' => Carbon::createFromFormat('d-m-Y', $data['tanggal_pengawasan'])->format('Y-m-d'),
+                'petugas_lapangan_id'    => $data['user_id_petugas_lapangan'] ?? null,
+                'pengawas_id'            => $data['user_id_pengawas'] ?? null,
+                'tanggal_survey'         => $tglSurvei,
+                'tanggal_pengawasan'     => $tglPengawasan,
+                'nama_pemberi_informasi' => $data['nama_pemberi_informasi'] ?? null,
+                'catatan'         => $data['catatan_blok_v'] ?? null,
             ]
         );
     }
+
 
     public function changeStatus($id, $status)
     {

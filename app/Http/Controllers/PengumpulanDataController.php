@@ -643,24 +643,148 @@ class PengumpulanDataController extends Controller
         ], 404);
     }
 
-    public function getEntriData($id)
+    public function getEntriData($shortlistId)
     {
-        // ID from the shortlist_vendor
-        $data = $this->pengumpulanDataService->getEntriData($id);
-        if ($data) {
-            return response()->json([
-                'status' => 'success',
-                'message' => config('constants.SUCCESS_MESSAGE_GET'),
-                'data' => $data
-            ]);
-        }
+        try {
+            $raw = $this->pengumpulanDataService->getEntriData($shortlistId);
+            if (!$raw) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => config('constants.ERROR_MESSAGE_GET'),
+                    'data'    => []
+                ], 404);
+            }
 
-        return response()->json([
-            'status' => 'error',
-            'message' => config('constants.ERROR_MESSAGE_GET'),
-            'data' => []
-        ], 404);
+            $data = is_array($raw) && array_key_exists('data', $raw) ? $raw['data'] : $raw;
+            $materials   = isset($data['material']) ? (array) $data['material'] : [];
+            $peralatans  = isset($data['peralatan']) ? (array) $data['peralatan'] : [];
+            $tenagaK     = isset($data['tenaga_kerja']) ? (array) $data['tenaga_kerja'] : [];
+
+            $out = [
+                'data_vendor_id'            => isset($data['data_vendor_id']) ? (int) $data['data_vendor_id'] : null,
+                'identifikasi_kebutuhan_id' => isset($data['identifikasi_kebutuhan_id']) ? (int) $data['identifikasi_kebutuhan_id'] : null,
+                'provinsi'                  => $data['provinsi'] ?? null,
+                'kota'                      => $data['kota'] ?? null,
+                'nama_responden'            => $data['nama_responden'] ?? null,
+                'alamat'                    => $data['alamat'] ?? null,
+                'no_telepon'                => $data['no_telepon'] ?? null,
+                'kategori_responden'        => $data['kategori_responden'] ?? null,
+                'keterangan_petugas_lapangan' => [
+                    'nama_petugas_lapangan' => $data['keterangan_petugas_lapangan']['nama_petugas_lapangan'] ?? $data['nama_petugas_lapangan'] ?? null,
+                    'nip_petugas_lapangan'  => $data['keterangan_petugas_lapangan']['nip_petugas_lapangan'] ?? $data['nip_petugas_lapangan'] ?? null,
+                    'tanggal_survei'        => $this->formatDMY($data['keterangan_petugas_lapangan']['tanggal_survei'] ?? $data['tanggal_survei'] ?? null),
+                    'nama_pengawas'         => $data['keterangan_petugas_lapangan']['nama_pengawas'] ?? $data['nama_pengawas'] ?? null,
+                    'nip_pengawas'          => $data['keterangan_petugas_lapangan']['nip_pengawas'] ?? $data['nip_pengawas'] ?? null,
+                    'tanggal_pengawasan'    => $this->formatDMY($data['keterangan_petugas_lapangan']['tanggal_pengawasan'] ?? $data['tanggal_pengawasan'] ?? null),
+                ],
+                'keterangan_pemberi_informasi' => [
+                    'nama_pemberi_informasi' => $data['keterangan_pemberi_informasi']['nama_pemberi_informasi'] ?? $data['nama_pemberi_informasi'] ?? null,
+                    'tanda_tangan_responden' => $data['keterangan_pemberi_informasi']['tanda_tangan_responden'] ?? null,
+                ],
+                'material' => array_map(function ($m) {
+                    return [
+                        'id'                           => isset($m['id']) ? (int) $m['id'] : null,
+                        'identifikasi_kebutuhan_id'    => (string) ($m['identifikasi_kebutuhan_id'] ?? ''),
+                        'nama_material'                => $m['nama_material'] ?? null,
+                        'satuan'                       => $m['satuan'] ?? null,
+                        'spesifikasi'                  => $m['spesifikasi'] ?? null,
+                        'ukuran'                       => $m['ukuran'] ?? null,
+                        'kodefikasi'                   => $m['kodefikasi'] ?? null,
+                        'kelompok_material'            => $m['kelompok_material'] ?? null,
+                        'jumlah_kebutuhan'             => $m['jumlah_kebutuhan'] ?? null,
+                        'merk'                         => $m['merk'] ?? null,
+                        'provincies_id'                => isset($m['provincies_id']) ? (int) $m['provincies_id'] : null,
+                        'cities_id'                    => isset($m['cities_id']) ? (int) $m['cities_id'] : null,
+                        'satuan_setempat'              => $m['satuan_setempat'] ?? null,
+                        'satuan_setempat_panjang'      => isset($m['satuan_setempat_panjang']) ? (float) $m['satuan_setempat_panjang'] : null,
+                        'satuan_setempat_lebar'        => isset($m['satuan_setempat_lebar']) ? (float) $m['satuan_setempat_lebar'] : null,
+                        'satuan_setempat_tinggi'       => isset($m['satuan_setempat_tinggi']) ? (float) $m['satuan_setempat_tinggi'] : null,
+                        'konversi_satuan_setempat'     => $m['konversi_satuan_setempat'] ?? null,
+                        'harga_satuan_setempat'        => isset($m['harga_satuan_setempat']) ? (int) $m['harga_satuan_setempat'] : null,
+                        'harga_konversi_satuan_setempat' => isset($m['harga_konversi_satuan_setempat']) ? (int) $m['harga_konversi_satuan_setempat'] : null,
+                        'harga_khusus'                 => isset($m['harga_khusus']) ? (int) $m['harga_khusus'] : null,
+                        'keterangan'                   => $m['keterangan'] ?? null,
+                    ];
+                }, $materials),
+                'peralatan' => array_map(function ($p) {
+                    return [
+                        'id'                         => isset($p['id']) ? (int) $p['id'] : null,
+                        'identifikasi_kebutuhan_id'  => (string) ($p['identifikasi_kebutuhan_id'] ?? ''),
+                        'nama_peralatan'             => $p['nama_peralatan'] ?? null,
+                        'satuan'                     => $p['satuan'] ?? null,
+                        'spesifikasi'                => $p['spesifikasi'] ?? null,
+                        'kapasitas'                  => $p['kapasitas'] ?? null,
+                        'kodefikasi'                 => $p['kodefikasi'] ?? null,
+                        'kelompok_peralatan'         => $p['kelompok_peralatan'] ?? null,
+                        'jumlah_kebutuhan'           => $p['jumlah_kebutuhan'] ?? null,
+                        'merk'                       => $p['merk'] ?? null,
+                        'provincies_id'              => isset($p['provincies_id']) ? (int) $p['provincies_id'] : null,
+                        'cities_id'                  => isset($p['cities_id']) ? (int) $p['cities_id'] : null,
+                        'satuan_setempat'            => $p['satuan_setempat'] ?? null,
+                        'harga_sewa_satuan_setempat' => isset($p['harga_sewa_satuan_setempat']) ? (int) $p['harga_sewa_satuan_setempat'] : null,
+                        'harga_sewa_konversi'        => isset($p['harga_sewa_konversi']) ? (int) $p['harga_sewa_konversi'] : null,
+                        'harga_pokok'                => isset($p['harga_pokok']) ? (int) $p['harga_pokok'] : null,
+                    ];
+                }, $peralatans),
+                'tenaga_kerja' => array_map(function ($t) {
+                    return [
+                        'id'                        => isset($t['id']) ? (int) $t['id'] : null,
+                        'identifikasi_kebutuhan_id' => (string) ($t['identifikasi_kebutuhan_id'] ?? ''),
+                        'jenis_tenaga_kerja'        => $t['jenis_tenaga_kerja'] ?? null,
+                        'satuan'                    => $t['satuan'] ?? null,
+                        'jumlah_kebutuhan'          => $t['jumlah_kebutuhan'] ?? null,
+                        'kodefikasi'                => $t['kodefikasi'] ?? null,
+                        'provincies_id'             => isset($t['provincies_id']) ? (int) $t['provincies_id'] : null,
+                        'cities_id'                 => isset($t['cities_id']) ? (int) $t['cities_id'] : null,
+                        'harga_per_satuan_setempat' => isset($t['harga_per_satuan_setempat']) ? (string) $t['harga_per_satuan_setempat'] : null,
+                        'harga_konversi_perjam'     => isset($t['harga_konversi_perjam']) ? (string) $t['harga_konversi_perjam'] : null,
+                        'keterangan'                => $t['keterangan'] ?? null,
+                    ];
+                }, $tenagaK),
+            ];
+
+            if (isset($data['verifikasi_dokumen']) && is_array($data['verifikasi_dokumen'])) {
+                $out['verifikasi_dokumen'] = array_map(function ($v) {
+                    return [
+                        'data_vendor_id'      => isset($v['data_vendor_id']) ? (int) $v['data_vendor_id'] : null,
+                        'shortlist_vendor_id' => isset($v['shortlist_vendor_id']) ? (int) $v['shortlist_vendor_id'] : null,
+                        'item_number'         => $v['item_number'] ?? null,
+                        'status_pemeriksaan'  => $v['status_pemeriksaan'] ?? null,
+                        'verified_by'         => $v['verified_by'] ?? null,
+                    ];
+                }, $data['verifikasi_dokumen']);
+            } else {
+                $out['verifikasi_dokumen'] = [];
+            }
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Berhasil Mendapatkan Data',
+                'data'    => $out
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => config('constants.ERROR_MESSAGE_GET'),
+                'error'   => $e->getMessage(),
+                'data'    => []
+            ], 500);
+        }
     }
+
+    private function formatDMY($dateStr)
+    {
+        if (!$dateStr) return null;
+        if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $dateStr)) {
+            return $dateStr;
+        }
+        try {
+            return \Carbon\Carbon::parse($dateStr)->format('d-m-Y');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
 
     public function entriDataSave(Request $request)
     {
@@ -738,10 +862,6 @@ class PengumpulanDataController extends Controller
 
         try {
             $filePath = null;
-
-            if ($request->hasFile('berita_acara')) {
-                $filePath = $request->file('berita_acara')->store('berita_acara', 'public');
-            }
 
             $this->pengumpulanDataService->updateDataVerifikasiPengawas($request);
             $this->pengumpulanDataService->pemeriksaanDataList($request);

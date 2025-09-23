@@ -564,32 +564,30 @@ class PengumpulanDataService
         $material = [];
         if (!empty($materialIds)) {
             $rows = $this->getIdentifikasiSurvey('material', $vendor->material_id);
-
             foreach ($rows as $r) {
                 $material[] = [
-                    'id'                       => (int) $r->id,
-                    'material_id'              => (int) $r->id, // jaga kompatibilitas FE kamu
-                    'identifikasi_kebutuhan_id' => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
-                    'nama_material'            => $r->nama_material ?? null,
-                    'satuan'                   => $r->satuan ?? null,
-                    'spesifikasi'              => $r->spesifikasi ?? null,
-                    'ukuran'                   => $r->ukuran ?? null,
-                    'kodefikasi'               => $r->kodefikasi ?? null,
-                    'kelompok_material'        => $r->kelompok_material ?? null,
-                    'jumlah_kebutuhan'         => $r->jumlah_kebutuhan ?? null,
-                    'merk'                     => $r->merk ?? null,
-                    'provincies_id'            => isset($r->provincies_id) ? (int)$r->provincies_id : null,
-                    'cities_id'                => isset($r->cities_id) ? (int)$r->cities_id : null,
-
-                    'satuan_setempat'                => $r->satuan_setempat ?? null,
-                    'satuan_setempat_panjang'        => isset($r->satuan_setempat_panjang) ? (float)$r->satuan_setempat_panjang : null,
-                    'satuan_setempat_lebar'          => isset($r->satuan_setempat_lebar) ? (float)$r->satuan_setempat_lebar : null,
-                    'satuan_setempat_tinggi'         => isset($r->satuan_setempat_tinggi) ? (float)$r->satuan_setempat_tinggi : null,
-                    'konversi_satuan_setempat'       => $r->konversi_satuan_setempat ?? null,
-                    'harga_satuan_setempat'          => isset($r->harga_satuan_setempat) ? (float)$r->harga_satuan_setempat : null,
+                    'id'                         => (int) $r->id,
+                    'material_id'                => (int) $r->id,
+                    'identifikasi_kebutuhan_id'  => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
+                    'nama_material'              => $r->nama_material ?? null,
+                    'satuan'                     => $r->satuan ?? null,
+                    'spesifikasi'                => $r->spesifikasi ?? null,
+                    'ukuran'                     => $r->ukuran ?? null,
+                    'kodefikasi'                 => $r->kodefikasi ?? null,
+                    'kelompok_material'          => $r->kelompok_material ?? null,
+                    'jumlah_kebutuhan'           => $r->jumlah_kebutuhan ?? null,
+                    'merk'                       => $r->merk ?? null,
+                    'provincies_id'              => isset($r->provincies_id) ? (int)$r->provincies_id : null,
+                    'cities_id'                  => isset($r->cities_id) ? (int)$r->cities_id : null,
+                    'satuan_setempat'            => $r->satuan_setempat ?? null,
+                    'satuan_setempat_panjang'    => isset($r->satuan_setempat_panjang) ? (float)$r->satuan_setempat_panjang : null,
+                    'satuan_setempat_lebar'      => isset($r->satuan_setempat_lebar) ? (float)$r->satuan_setempat_lebar : null,
+                    'satuan_setempat_tinggi'     => isset($r->satuan_setempat_tinggi) ? (float)$r->satuan_setempat_tinggi : null,
+                    'konversi_satuan_setempat'   => $r->konversi_satuan_setempat ?? null,
+                    'harga_satuan_setempat'      => isset($r->harga_satuan_setempat) ? (float)$r->harga_satuan_setempat : null,
                     'harga_konversi_satuan_setempat' => isset($r->harga_konversi_satuan_setempat) ? (float)$r->harga_konversi_satuan_setempat : null,
-                    'harga_khusus'                   => isset($r->harga_khusus) ? (float)$r->harga_khusus : null,
-                    'keterangan'                     => $r->keterangan ?? null,
+                    'harga_khusus'               => isset($r->harga_khusus) ? (float)$r->harga_khusus : null,
+                    'keterangan'                 => $r->keterangan ?? null,
                 ];
             }
         }
@@ -597,28 +595,26 @@ class PengumpulanDataService
         $peralatan = [];
         if (!empty($peralatanIds)) {
             $rows = $this->getIdentifikasiSurvey('peralatan', $vendor->peralatan_id);
-
             foreach ($rows as $r) {
                 $peralatan[] = [
-                    'id'                       => (int) $r->id,
-                    'peralatan_id'             => (int) $r->id,
-                    'identifikasi_kebutuhan_id' => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
-                    'nama_peralatan'           => $r->nama_peralatan ?? null,
-                    'satuan'                   => $r->satuan ?? null,
-                    'spesifikasi'              => $r->spesifikasi ?? null,
-                    'kapasitas'                => $r->kapasitas ?? null,
-                    'kodefikasi'               => $r->kodefikasi ?? null,
-                    'kelompok_peralatan'       => $r->kelompok_peralatan ?? null,
-                    'jumlah_kebutuhan'         => $r->jumlah_kebutuhan ?? null,
-                    'merk'                     => $r->merk ?? null,
-                    'provincies_id'            => isset($r->provincies_id) ? (int)$r->provincies_id : null,
-                    'cities_id'                => isset($r->cities_id) ? (int)$r->cities_id : null,
-
-                    'satuan_setempat'              => $r->satuan_setempat ?? null,
-                    'harga_sewa_satuan_setempat'   => isset($r->harga_sewa_satuan_setempat) ? (float)$r->harga_sewa_satuan_setempat : null,
-                    'harga_sewa_konversi'          => isset($r->harga_sewa_konversi) ? (float)$r->harga_sewa_konversi : null,
-                    'harga_pokok'                  => isset($r->harga_pokok) ? (float)$r->harga_pokok : null,
-                    'keterangan'                   => $r->keterangan ?? null,
+                    'id'                         => (int) $r->id,
+                    'peralatan_id'               => (int) $r->id,
+                    'identifikasi_kebutuhan_id'  => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
+                    'nama_peralatan'             => $r->nama_peralatan ?? null,
+                    'satuan'                     => $r->satuan ?? null,
+                    'spesifikasi'                => $r->spesifikasi ?? null,
+                    'kapasitas'                  => $r->kapasitas ?? null,
+                    'kodefikasi'                 => $r->kodefikasi ?? null,
+                    'kelompok_peralatan'         => $r->kelompok_peralatan ?? null,
+                    'jumlah_kebutuhan'           => $r->jumlah_kebutuhan ?? null,
+                    'merk'                       => $r->merk ?? null,
+                    'provincies_id'              => isset($r->provincies_id) ? (int)$r->provincies_id : null,
+                    'cities_id'                  => isset($r->cities_id) ? (int)$r->cities_id : null,
+                    'satuan_setempat'            => $r->satuan_setempat ?? null,
+                    'harga_sewa_satuan_setempat' => isset($r->harga_sewa_satuan_setempat) ? (float)$r->harga_sewa_satuan_setempat : null,
+                    'harga_sewa_konversi'        => isset($r->harga_sewa_konversi) ? (float)$r->harga_sewa_konversi : null,
+                    'harga_pokok'                => isset($r->harga_pokok) ? (float)$r->harga_pokok : null,
+                    'keterangan'                 => $r->keterangan ?? null,
                 ];
             }
         }
@@ -626,26 +622,23 @@ class PengumpulanDataService
         $tenagaKerja = [];
         if (!empty($tenagaKerjaIds)) {
             $rows = $this->getIdentifikasiSurvey('tenaga_kerja', $vendor->tenaga_kerja_id);
-
             foreach ($rows as $r) {
                 $tenagaKerja[] = [
-                    'id'                       => (int) $r->id,
-                    'tenaga_kerja_id'          => (int) $r->id,
-                    'identifikasi_kebutuhan_id' => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
-                    'jenis_tenaga_kerja'       => $r->jenis_tenaga_kerja ?? null,
-                    'satuan'                   => $r->satuan ?? null,
-                    'jumlah_kebutuhan'         => $r->jumlah_kebutuhan ?? null,
-                    'kodefikasi'               => $r->kodefikasi ?? null,
-                    'provincies_id'            => isset($r->provincies_id) ? (int)$r->provincies_id : null,
-                    'cities_id'                => isset($r->cities_id) ? (int)$r->cities_id : null,
-
-                    'harga_per_satuan_setempat' => isset($r->harga_per_satuan_setempat) ? (float)$r->harga_per_satuan_setempat : null,
-                    'harga_konversi_perjam'     => isset($r->harga_konversi_perjam) ? (float)$r->harga_konversi_perjam : null,
-                    'keterangan'                => $r->keterangan ?? null,
+                    'id'                         => (int) $r->id,
+                    'tenaga_kerja_id'            => (int) $r->id,
+                    'identifikasi_kebutuhan_id'  => isset($r->identifikasi_kebutuhan_id) ? (string)$r->identifikasi_kebutuhan_id : (string)$vendor->identifikasi_kebutuhan_id,
+                    'jenis_tenaga_kerja'         => $r->jenis_tenaga_kerja ?? null,
+                    'satuan'                     => $r->satuan ?? null,
+                    'jumlah_kebutuhan'           => $r->jumlah_kebutuhan ?? null,
+                    'kodefikasi'                 => $r->kodefikasi ?? null,
+                    'provincies_id'              => isset($r->provincies_id) ? (int)$r->provincies_id : null,
+                    'cities_id'                  => isset($r->cities_id) ? (int)$r->cities_id : null,
+                    'harga_per_satuan_setempat'  => isset($r->harga_per_satuan_setempat) ? (float)$r->harga_per_satuan_setempat : null,
+                    'harga_konversi_perjam'      => isset($r->harga_konversi_perjam) ? (float)$r->harga_konversi_perjam : null,
+                    'keterangan'                 => $r->keterangan ?? null,
                 ];
             }
         }
-
 
         $kategoriVendor = KategoriVendor::whereIn(
             'id',
@@ -653,20 +646,31 @@ class PengumpulanDataService
         )->selectRaw('nama_kategori_vendor as name')->get();
         $stringKategoriVendor = $kategoriVendor->pluck('name')->implode(', ');
 
+        $verifRows = $this->getPemeriksaanDataList((int)$sv->data_vendor_id, (int)$sv->id);
+        $verifikasi = [];
+        foreach ($verifRows as $v) {
+            $verifikasi[] = [
+                'data_vendor_id'      => (int) $v->data_vendor_id,
+                'shortlist_vendor_id' => (int) $v->shortlist_vendor_id,
+                'item_number'         => $v->item_number,
+                'status_pemeriksaan'  => $v->status_pemeriksaan,
+                'verified_by'         => $v->verified_by,
+            ];
+        }
+
         return [
             'type_save'                => null,
             'user_id_petugas_lapangan' => $userIdPetugas ? (int)$userIdPetugas : null,
             'user_id_pengawas'         => $userIdPengawas ? (int)$userIdPengawas : null,
             'nama_pemberi_informasi'   => $namaPI,
-            'identifikasi_kebutuhan_id' => (string) $vendor->identifikasi_kebutuhan_id,
-            'data_vendor_id'           => (string) $vendor->vendor_id,
+            'identifikasi_kebutuhan_id' => (int) $vendor->identifikasi_kebutuhan_id,
+            'data_vendor_id'           => (int) $vendor->vendor_id,
             'tanggal_survei'           => $tanggalSurvei,
             'tanggal_pengawasan'       => $tanggalPengawasan,
-            'catatan_blok_v'     => $catatanBlokV,
+            'catatan_blok_v'           => $catatanBlokV,
             'material'                 => $material,
             'peralatan'                => $peralatan,
             'tenaga_kerja'             => $tenagaKerja,
-
             'provinsi'                 => $vendor->nama_provinsi,
             'kota'                     => $vendor->nama_kota,
             'nama_responden'           => $vendor->nama_vendor,
@@ -685,6 +689,7 @@ class PengumpulanDataService
                 'nama_pemberi_informasi' => $namaPI,
                 'tanda_tangan_responden' => $namaPI ? ('Ditandatangani oleh ' . $namaPI . ' pada ' . now()) : null,
             ],
+            'verifikasi_dokumen'       => $verifikasi,
         ];
     }
 

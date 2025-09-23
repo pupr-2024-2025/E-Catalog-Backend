@@ -743,16 +743,23 @@ class PengumpulanDataController extends Controller
                 }, $tenagaK),
             ];
 
-            if (isset($data['verifikasi_dokumen']) && is_array($data['verifikasi_dokumen'])) {
-                $out['verifikasi_dokumen'] = array_map(function ($v) {
+            $verifSrc = [];
+            if (isset($data['verifikasi_dokumen']) && is_array($data['verifikasi_dokumen'])) $verifSrc = $data['verifikasi_dokumen'];
+            elseif (isset($data['verifikasi']) && is_array($data['verifikasi'])) $verifSrc = $data['verifikasi'];
+            elseif (isset($data['pemeriksaan']) && is_array($data['pemeriksaan'])) $verifSrc = $data['pemeriksaan'];
+            elseif (isset($data['verifikasi_pengawas']) && is_array($data['verifikasi_pengawas'])) $verifSrc = $data['verifikasi_pengawas'];
+            elseif (isset($data['keterangan_petugas_lapangan']['verifikasi_dokumen']) && is_array($data['keterangan_petugas_lapangan']['verifikasi_dokumen'])) $verifSrc = $data['keterangan_petugas_lapangan']['verifikasi_dokumen'];
+
+            if ($verifSrc) {
+                $out['verifikasi_dokumen'] = array_map(function ($v) use ($data, $shortlistId) {
                     return [
-                        'data_vendor_id'      => isset($v['data_vendor_id']) ? (int) $v['data_vendor_id'] : null,
-                        'shortlist_vendor_id' => isset($v['shortlist_vendor_id']) ? (int) $v['shortlist_vendor_id'] : null,
-                        'item_number'         => $v['item_number'] ?? null,
-                        'status_pemeriksaan'  => $v['status_pemeriksaan'] ?? null,
-                        'verified_by'         => $v['verified_by'] ?? null,
+                        'data_vendor_id'      => isset($v['data_vendor_id']) ? (int) $v['data_vendor_id'] : (isset($data['data_vendor_id']) ? (int) $data['data_vendor_id'] : null),
+                        'shortlist_vendor_id' => isset($v['shortlist_vendor_id']) ? (int) $v['shortlist_vendor_id'] : (is_numeric($shortlistId) ? (int) $shortlistId : null),
+                        'item_number'         => $v['item_number'] ?? $v['item'] ?? $v['kode'] ?? null,
+                        'status_pemeriksaan'  => $v['status_pemeriksaan'] ?? $v['status'] ?? $v['nilai'] ?? null,
+                        'verified_by'         => $v['verified_by'] ?? $v['verifier'] ?? $v['oleh'] ?? null,
                     ];
-                }, $data['verifikasi_dokumen']);
+                }, $verifSrc);
             } else {
                 $out['verifikasi_dokumen'] = [];
             }

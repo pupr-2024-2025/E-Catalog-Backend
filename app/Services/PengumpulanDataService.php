@@ -523,6 +523,10 @@ class PengumpulanDataService
                 'shortlist_vendor.shortlist_vendor_id AS identifikasi_kebutuhan_id',
                 'shortlist_vendor.petugas_lapangan_id AS sv_petugas_lapangan_id',
                 'shortlist_vendor.pengawas_id AS sv_pengawas_id',
+                'shortlist_vendor.catatan_blok_1',
+                'shortlist_vendor.catatan_blok_2',
+                'shortlist_vendor.catatan_blok_3',
+                'shortlist_vendor.catatan_blok_4',
                 'shortlist_vendor.nama_pemberi_informasi AS sv_nama_pemberi_informasi',
                 'shortlist_vendor.tanggal_survei AS sv_tanggal_survei',
                 'shortlist_vendor.tanggal_pengawasan AS sv_tanggal_pengawasan',
@@ -653,11 +657,17 @@ class PengumpulanDataService
         )->selectRaw('nama_kategori_vendor as name')->get();
         $stringKategoriVendor = $kategoriVendor->pluck('name')->implode(', ');
 
+        $verifikasi = VerifikasiValidasi::where('shortlist_vendor_id', $vendor->identifikasi_kebutuhan_id)->get();
+
         return [
             'type_save'                => null,
             'user_id_petugas_lapangan' => $userIdPetugas ? (int)$userIdPetugas : null,
             'user_id_pengawas'         => $userIdPengawas ? (int)$userIdPengawas : null,
             'nama_pemberi_informasi'   => $namaPI,
+            'catatan_blok_1' => $vendor->catatan_blok_1,
+            'catatan_blok_2' => $vendor->catatan_blok_2,
+            'catatan_blok_3' => $vendor->catatan_blok_3,
+            'catatan_blok_4' => $vendor->catatan_blok_4,
             'identifikasi_kebutuhan_id' => (string) $vendor->identifikasi_kebutuhan_id,
             'data_vendor_id'           => (string) $vendor->vendor_id,
             'tanggal_survei'           => $tanggalSurvei,
@@ -666,7 +676,6 @@ class PengumpulanDataService
             'material'                 => $material,
             'peralatan'                => $peralatan,
             'tenaga_kerja'             => $tenagaKerja,
-
             'provinsi'                 => $vendor->nama_provinsi,
             'kota'                     => $vendor->nama_kota,
             'nama_responden'           => $vendor->nama_vendor,
@@ -685,6 +694,7 @@ class PengumpulanDataService
                 'nama_pemberi_informasi' => $namaPI,
                 'tanda_tangan_responden' => $namaPI ? ('Ditandatangani oleh ' . $namaPI . ' pada ' . now()) : null,
             ],
+            'verifikasi_validasi' => $verifikasi
         ];
     }
 

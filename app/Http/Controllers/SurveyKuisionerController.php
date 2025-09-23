@@ -167,7 +167,7 @@ public function generateLinkKuisioner($id)
                 'status'  => 'error',
                 'message' => config('constants.ERROR_MESSAGE_GET'),
                 'error'   => $e->getMessage(),
-            ]);
+            ],400);
         }
     }
 }

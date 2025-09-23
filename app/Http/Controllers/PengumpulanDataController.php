@@ -645,7 +645,7 @@ class PengumpulanDataController extends Controller
 
     public function getEntriData($id)
     {
-        // ID from the shortlist_vendor
+        // ID dari tabel shortlist vendor
         $data = $this->pengumpulanDataService->getEntriData($id);
         if ($data) {
             return response()->json([

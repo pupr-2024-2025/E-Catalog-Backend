@@ -11,11 +11,12 @@ class KeteranganPetugasSurvey extends Model
 
     protected $table = 'keterangan_petugas_survey';
     protected $fillable = [
+        'identifikasi_kebutuhan_id',
         'petugas_lapangan_id',
         'pengawas_id',
-        'tanggal_survey',
+        'tanggal_survei',
         'tanggal_pengawasan',
         'nama_pemberi_informasi',
-        'identifikasi_kebutuhan_id',
+        'catatan_blok_v',
     ];
 }

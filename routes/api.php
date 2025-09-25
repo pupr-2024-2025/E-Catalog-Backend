@@ -142,7 +142,7 @@ Route::get('/survey-kuisioner/get-data-survey', [SurveyKuisionerController::clas
 Route::post('/survey-kuisioner/store-survey-kuisioner', [SurveyKuisionerController::class, 'storeSurveyKuisioner']);
 
 Route::get('/pemeriksaan-rekonsiliasi/get-list-data', [PemeriksaanAndRekonsiliasiController::class, 'getAllDataPemeriksaanRekonsiliasi']);
-Route::get('/pemeriksaan-rekonsiliasi/get-data-pemeriksaan-rekonsiliasi/{id}', [PemeriksaanAndRekonsiliasiController::class, 'eksternal/get-all-data-material']);
+Route::get('/pemeriksaan-rekonsiliasi/get-data-pemeriksaan-rekonsiliasi/{id}', [PemeriksaanAndRekonsiliasiController::class, 'getDataPemeriksaanRekonsiliasi']);
 Route::post('/pemeriksaan-rekonsiliasi/store-verifikasi-validasi', [PemeriksaanAndRekonsiliasiController::class, 'storePemeriksaanRekonsiliasi']);
 
 Route::get('/eksternal/get-all-data-material', [EksternalAppController::class, 'getAllDataMaterial']);

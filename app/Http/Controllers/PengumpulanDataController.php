@@ -716,7 +716,7 @@ class PengumpulanDataController extends Controller
                 'status' => 'error',
                 'message' => 'Gagal menyimpan data!',
                 'error' => $e->getMessage()
-            ]);
+            ],400);
         }
     }
 

@@ -22,25 +22,18 @@ class PemeriksaanAndRekonsiliasiController extends Controller
     public function getAllDataPemeriksaanRekonsiliasi()
     {
         $status = [
+            config('constants.STATUS_PEMERIKSAAN'),
             config('constants.STATUS_REKONSILIASI'),
             config('constants.STATUS_PENYEBARLUASAN_DATA'),
         ];
 
         $listData = $this->perencanaanDataService->tableListPerencanaanData($status);
 
-        if ($listData) {
-            return response()->json([
-                'status' => 'success',
-                'message' => config('constants.SUCCESS_MESSAGE_GET'),
-                'data' => $listData
-            ]);
-        } else {
-            return response()->json([
-                'status' => 'error',
-                'message' => config('constants.ERROR_MESSAGE_GET'),
-                'data' => []
-            ]);
-        }
+        return response()->json([
+            'status' => 'success',
+            'message' => config('constants.SUCCESS_MESSAGE_GET'),
+            'data' => $listData
+        ]);
     }
 
     public function getDataPemeriksaanRekonsiliasi($shortlistId)

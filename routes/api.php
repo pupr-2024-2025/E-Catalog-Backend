@@ -47,6 +47,7 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
 Route::middleware('sipasti.jwt')->group(function () {
+    Route::get("/register-sipasti",[LoginController::class,"regsiterFromSipasti"]);
     Route::get('/get-balai-kerja', [BalaiKerjaController::class, 'getAllSatuanBalaiKerja']);
     Route::get('/get-satuan-kerja', [SatuanKerjaController::class, 'getAllSatuanKerja']);
 
@@ -132,6 +133,7 @@ Route::middleware('sipasti.jwt')->group(function () {
     Route::get('/pj-balai/list-user-by-balai', [UsersController::class, 'listUserByNamaBalai']);
     Route::get('/pj-balai/list-perencanaan-by-nama-balai', [PerencanaanDataController::class, "listPerencanaanDataByNamaBalai"]);
     Route::get('/pj-balai/list-pengumpulan-by-nama-balai', [PengumpulanDataController::class, "listPengumpulanDataByNamaBalai"]);
+    Route::get('/pj-balai/list-pemeriksaan-by-nama-balai', [PengumpulanDataController::class, "listPemeriksaanDataByNamaBalai"]);
 });
 
 Route::get('/test-email', function () {

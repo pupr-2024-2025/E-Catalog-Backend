@@ -46,6 +46,7 @@ Route::post('/store-user', [UsersController::class, 'store']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
+Route::get("/register-sipasti", [LoginController::class, "registerFromSipasti"]);
 Route::get('/get-balai-kerja', [BalaiKerjaController::class, 'getAllSatuanBalaiKerja']);
 Route::get('/get-satuan-kerja', [SatuanKerjaController::class, 'getAllSatuanKerja']);
 
@@ -86,29 +87,6 @@ Route::get('/perencanaan-data/get-kuisioner-tenaga-kerja/{id}', [KuisionerContro
 Route::get('/perencanaan-data/get-kuisioner-short-list-vendor/{id}', [KuisionerController::class, 'getShortListVendor']);
 Route::post('perencanaan-data/generate-pdf-sunting/{id}', [KuisionerController::class, 'generatePdf']);
 
-
-Route::get('/test-email', function () {
-    Mail::raw('This is a test email', function ($message) {
-        $message->to('bayuaditya0111@gmail.com')
-            ->subject('Test Email');
-    });
-
-    return 'Email sent!';
-});
-
-
-Route::get('/verification/success', function () {
-    return view('verification.success');
-})->name('verification.success');
-
-Route::get('/verification/already-verified', function () {
-    return view('verification.already_verified');
-})->name('verification.already_verified');
-
-Route::get('/password/reset/{token}', function ($token) {
-    return view('auth.password.reset', ['token' => $token]);
-})->name('password.reset');
-
 Route::get('/provinces-and-cities', [ProvinceAndCitiesController::class, 'getProvinceAndCities']);
 
 Route::get('/pengumpulan-data/get-team-pengumpulan', [PengumpulanDataController::class, 'getTeamPengumpulanData']);
@@ -142,7 +120,7 @@ Route::get('/survey-kuisioner/get-data-survey', [SurveyKuisionerController::clas
 Route::post('/survey-kuisioner/store-survey-kuisioner', [SurveyKuisionerController::class, 'storeSurveyKuisioner']);
 
 Route::get('/pemeriksaan-rekonsiliasi/get-list-data', [PemeriksaanAndRekonsiliasiController::class, 'getAllDataPemeriksaanRekonsiliasi']);
-Route::get('/pemeriksaan-rekonsiliasi/get-data-pemeriksaan-rekonsiliasi/{id}', [PemeriksaanAndRekonsiliasiController::class, 'eksternal/get-all-data-material']);
+Route::get('/pemeriksaan-rekonsiliasi/get-data-pemeriksaan-rekonsiliasi/{id}', [PemeriksaanAndRekonsiliasiController::class, 'getDataPemeriksaanRekonsiliasi']);
 Route::post('/pemeriksaan-rekonsiliasi/store-verifikasi-validasi', [PemeriksaanAndRekonsiliasiController::class, 'storePemeriksaanRekonsiliasi']);
 
 Route::get('/eksternal/get-all-data-material', [EksternalAppController::class, 'getAllDataMaterial']);
@@ -154,3 +132,26 @@ Route::get('/pj-balai/list-user-standby', [UsersController::class, 'listByRoleAn
 Route::get('/pj-balai/list-user-by-balai', [UsersController::class, 'listUserByNamaBalai']);
 Route::get('/pj-balai/list-perencanaan-by-nama-balai', [PerencanaanDataController::class, "listPerencanaanDataByNamaBalai"]);
 Route::get('/pj-balai/list-pengumpulan-by-nama-balai', [PengumpulanDataController::class, "listPengumpulanDataByNamaBalai"]);
+Route::get('/pj-balai/list-pemeriksaan-by-nama-balai', [PengumpulanDataController::class, "listPemeriksaanDataByNamaBalai"]);
+
+Route::get('/test-email', function () {
+    Mail::raw('This is a test email', function ($message) {
+        $message->to('bayuaditya0111@gmail.com')
+            ->subject('Test Email');
+    });
+
+    return 'Email sent!';
+});
+
+
+Route::get('/verification/success', function () {
+    return view('verification.success');
+})->name('verification.success');
+
+Route::get('/verification/already-verified', function () {
+    return view('verification.already_verified');
+})->name('verification.already_verified');
+
+Route::get('/password/reset/{token}', function ($token) {
+    return view('auth.password.reset', ['token' => $token]);
+})->name('password.reset');

@@ -7,6 +7,7 @@ use App\Models\User;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use App\Helpers\Helper;
+use App\Models\SatuanBalaiKerja;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Firebase\JWT\ExpiredException;
@@ -55,7 +56,6 @@ class VerifySipastiJwt
         $baseUrl = rtrim(env('SIPASTI_BASE_URL'), '/');
 
         $resp = Http::withToken($token)->acceptJson()->get("$baseUrl/auth/profile");
-        dd($resp->json());
         if ($resp->ok()) {
             return $resp->json('data') ?? $resp->json();
         }
@@ -74,7 +74,7 @@ class VerifySipastiJwt
         $guestId  = $roleMap['guest'] ?? null;
         $rawRole  = Str::lower((string)($profile['role'] ?? ''));
         $roleName = match (true) {
-            Str::contains($rawRole, 'kepala balai') => 'PJ Balai',
+            Str::contains($rawRole, 'kepala-balai') => 'PJ Balai',
             $rawRole === 'superadmin'                => 'superadmin',
             default                                 => 'guest',
         };
@@ -88,7 +88,11 @@ class VerifySipastiJwt
 
         $cacheKey = 'user_profile_model:' . ($userIdSipasti ?: 'email:' . $email);
         $model = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($userIdSipasti, $email, $profile, $roleId) {
-            $balaiKerja = \App\Models\SatuanBalaiKerja::where('nama', 'like', "%{$profile['nama_balai']}%")->first();
+            $namaBalai = trim((string)($profile['balai_name'] ?? ''));
+            $balaiId = null;
+            if($namaBalai !== ''){
+                $balaiId = SatuanBalaiKerja::whereRaw('LOWER(nama) = ?',Str::lower($namaBalai))->value("id");
+            }
 
             $where = $userIdSipasti !== '' ? ['user_id_sipasti' => $userIdSipasti] : ['email' => $email];
             return \App\Models\Users::updateOrCreate(
@@ -100,10 +104,10 @@ class VerifySipastiJwt
                     'nik'           => isset($profile['detail']) ? $profile['detail']['nik'] : $profile['nik'] ?? null,
                     'nrp'           => isset($profile['detail']) ? $profile['detail']['nrp'] : $profile['nrp'] ?? null,
                     'nip'           => isset($profile['detail']) ? $profile['detail']['nip'] : $profile['nip'] ?? null,
-                    'id_roles'       => $roleId, // TODO: Bisa di fix karena role di sipasti tidak sinkron dengan katalog
+                    'id_roles'       => $roleId, 
                     'email_verified_at' => now(),
                     'status'        => 'active',
-                    'balai_kerja_id' => $balaiKerja ? $balaiKerja->id : null,
+                    'balai_kerja_id' => $balaiId ?? null,
                     'user_id_sipasti' => $userIdSipasti
                 ]
             );

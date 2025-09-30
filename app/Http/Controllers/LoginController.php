@@ -150,6 +150,14 @@ class LoginController extends Controller
         }
     }
 
+    public function regsiterFromSipasti()
+    {
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Successfull register from sipasti',
+        ], 201);
+    }
+
     public function checkRole()
     {
         try {

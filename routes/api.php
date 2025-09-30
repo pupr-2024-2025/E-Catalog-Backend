@@ -47,6 +47,7 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
 Route::middleware('sipasti.jwt')->group(function () {
+    Route::get("/register-sipasti",[LoginController::class,"regsiterFromSipasti"]);
     Route::get('/get-balai-kerja', [BalaiKerjaController::class, 'getAllSatuanBalaiKerja']);
     Route::get('/get-satuan-kerja', [SatuanKerjaController::class, 'getAllSatuanKerja']);
 

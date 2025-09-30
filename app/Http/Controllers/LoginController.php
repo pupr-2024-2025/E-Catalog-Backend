@@ -150,7 +150,7 @@ class LoginController extends Controller
         }
     }
 
-    public function regsiterFromSipasti()
+    public function registerFromSipasti()
     {
         return response()->json([
             'status' => 'success',

@@ -54,12 +54,13 @@ class VerifySipastiJwt
         }
 
         $baseUrl = rtrim(env('SIPASTI_BASE_URL'), '/');
-
-        $resp = Http::withToken($token)->acceptJson()->get("$baseUrl/auth/profile");
+        $resp = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Accept'        => 'application/json',
+        ])->get("$baseUrl/auth/profile");
         if ($resp->ok()) {
             return $resp->json('data') ?? $resp->json();
         }
-
 
         $profile = Cache::remember("sipasti:profile:{$decoded->sub}", now()->addMinutes(30), function () use ($baseUrl, $token) {
             $resp = Http::withToken($token)->acceptJson()->get("$baseUrl/auth/profile");
@@ -90,8 +91,8 @@ class VerifySipastiJwt
         $model = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($userIdSipasti, $email, $profile, $roleId) {
             $namaBalai = trim((string)($profile['balai_name'] ?? ''));
             $balaiId = null;
-            if($namaBalai !== ''){
-                $balaiId = SatuanBalaiKerja::whereRaw('LOWER(nama) = ?',Str::lower($namaBalai))->value("id");
+            if ($namaBalai !== '') {
+                $balaiId = SatuanBalaiKerja::whereRaw('LOWER(nama) = ?', Str::lower($namaBalai))->value("id");
             }
 
             $where = $userIdSipasti !== '' ? ['user_id_sipasti' => $userIdSipasti] : ['email' => $email];
@@ -104,7 +105,7 @@ class VerifySipastiJwt
                     'nik'           => isset($profile['detail']) ? $profile['detail']['nik'] : $profile['nik'] ?? null,
                     'nrp'           => isset($profile['detail']) ? $profile['detail']['nrp'] : $profile['nrp'] ?? null,
                     'nip'           => isset($profile['detail']) ? $profile['detail']['nip'] : $profile['nip'] ?? null,
-                    'id_roles'       => $roleId, 
+                    'id_roles'       => $roleId,
                     'email_verified_at' => now(),
                     'status'        => 'active',
                     'balai_kerja_id' => $balaiId ?? null,

@@ -35,8 +35,8 @@ class UserService
             'users.email',
             'users.surat_penugasan_url AS sk_penugasan',
         )
-            ->join('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
-            ->join('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
+            ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
+            ->leftJoin('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
             ->where('users.status', 'verification')
             ->whereNotNull('users.email_verified_at')
             ->where('users.id_roles', '!=', 1)
@@ -62,9 +62,9 @@ class UserService
             'satuan_kerja.nama AS satuan_kerja_name',
             'users.surat_penugasan_url as surat_penugasan'
         ])
-            ->join('roles', 'users.id_roles', '=', 'roles.id')
-            ->join('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
-            ->join('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
+            ->leftJoin('roles', 'users.id_roles', '=', 'roles.id')
+            ->leftJoin('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
+            ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
             ->whereNotNull('users.email_verified_at')
             ->where('users.id_roles', '!=', 1) // exclude superadmin
@@ -112,9 +112,9 @@ class UserService
             'satuan_kerja.nama AS satuan_kerja_name',
             'users.surat_penugasan_url as surat_penugasan'
         ])
-            ->join('roles', 'users.id_roles', '=', 'roles.id')
-            ->join('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
-            ->join('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
+            ->leftJoin('roles', 'users.id_roles', '=', 'roles.id')
+            ->leftJoin('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
+            ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
             ->whereNotNull('users.email_verified_at')
             ->where('users.id_roles', '!=', 1) // exclude superadmin
@@ -169,9 +169,9 @@ class UserService
                 'users.surat_penugasan_url as surat_penugasan',
                 'roles.nama as role',
             ])
-            ->join('roles', 'users.id_roles', '=', 'roles.id')
-            ->join('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
-            ->join('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
+            ->leftJoin('roles', 'users.id_roles', '=', 'roles.id')
+            ->leftJoin('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
+            ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
             ->whereNotNull('users.email_verified_at')
             ->where('users.id_roles', '!=', 1)   // exclude superadmin

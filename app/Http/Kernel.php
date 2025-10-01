@@ -43,7 +43,7 @@ class Kernel extends HttpKernel
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            // VerifySipastiJwt::class
+            // VerifySipastiJwt::class // memakai ini, seluruh yang '/api' akan menggunakan middleware jwt
         ],
     ];
 
@@ -66,6 +66,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'jwt.verify' => \App\Http\Middleware\JwtMiddleware::class,
-        'sipasti.jwt' => \App\Http\Middleware\VerifySipastiJwt::class,
+        'sipasti.jwt' => VerifySipastiJwt::class,
     ];
 }

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Roles;
-use App\Models\users;
+use App\Models\Users;
 use App\Services\UserService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -57,7 +57,7 @@ class UsersController extends Controller
                 $filePath = $request->file('surat_penugasan_url')->store('sk_penugasan');
             }
 
-            $user = new users();
+            $user = new Users();
             $user->nama_lengkap = $request->nama_lengkap;
             $user->no_handphone = $request->no_handphone;
             $user->nik = $request->nik;
@@ -144,7 +144,45 @@ class UsersController extends Controller
         ]);
     }
 
-    public function getRoleByToken() {}
+    public function getProfileUser(Request $request)
+    {
+        $authUser = $request->attributes->get('auth_user', []);
+        $userIdSipasti = $authUser['user_id_sipasti'] ?? null;
+        if (!$userIdSipasti) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'User ID tidak ditemukan di token'
+            ], 400);
+        }
+
+        $user = Users::where("user_id_sipasti", $userIdSipasti)->first();
+        if (!$user) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+        $data = [
+            "nama_lengkap" => $user->nama_lengkap,
+            "no_handphone" => $user->no_handphone,
+            "nik" => $user->nik,
+            "status" => $user->status,
+            "email" => $user->email,
+            "role" => $user->role->nama,
+            "nrp" => $user->nrp,
+            "nip" => $user->nip,
+            "user_id_sipasti" => $user->user_id_sipasti,
+            "satuan_kerja" => $user->satuanKerja->nama ?? null,
+            "balai_kerja" => $user->balaiSatuanKerja->nama ?? null,
+            "surat_penugasan_url" => $user->surat_penugasan_url,
+        ];
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Berhasil mendapatkan data user',
+            'data'    => $data,
+        ]);
+    }
 
     public function listByRoleAndByBalai(Request $request)
     {

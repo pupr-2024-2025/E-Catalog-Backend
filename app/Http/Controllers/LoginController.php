@@ -17,10 +17,10 @@ class LoginController extends Controller
 
     public function __construct(
         UserService $userService,
-        LoginService $loginService
+        // LoginService $loginService
     ) {
         $this->userService = $userService;
-        $this->loginService = $loginService;
+        // $this->loginService = $loginService;
     }
 
     public function login(Request $request)

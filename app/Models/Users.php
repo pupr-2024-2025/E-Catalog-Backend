@@ -15,7 +15,7 @@ class Users extends Model implements JWTSubject, AuthenticatableContract
     use HasFactory, Notifiable, AuthAuthenticatable;
 
 
-    protected $fillable = ['id_roles', 'nama_lengkap', 'no_handphone', 'nik', 'nrp', 'nip', 'satuan_kerja_id', 'balai_kerja_id', 'status', 'user_id_sipasti', 'email',];
+    protected $fillable = ['id_roles', 'nama_lengkap', 'no_handphone', 'nik', 'nrp', 'nip', 'satuan_kerja_id', 'balai_kerja_id', 'status', 'user_id_sipasti', 'email', 'email_verified_at'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
@@ -31,11 +31,12 @@ class Users extends Model implements JWTSubject, AuthenticatableContract
         return $this->belongsTo(SatuanBalaiKerja::class, 'balai_kerja_id');
     }
 
-    public function role(){
-        return $this->belongsTo(Roles::class,'id_roles', 'id');
+    public function role()
+    {
+        return $this->belongsTo(Roles::class, 'id_roles', 'id');
     }
 
-     // Get the id from user_id
+    // Get the id from user_id
     public function getJWTIdentifier()
     {
         return $this->getKey();

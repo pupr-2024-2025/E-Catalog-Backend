@@ -147,6 +147,66 @@ class PerencanaanDataController extends Controller
         ]);
     }
 
+    public function listPengumpulanDataByNamaBalai(Request $request)
+    {
+        $namaBalai = $request->query('nama_balai');
+
+        if (empty($namaBalai)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => config('constants.ERROR_MESSAGE_GET'),
+                'data' => []
+            ], 400);
+        }
+
+        $statusPerencanaan = config('constants.STATUS_PENGUMPULAN');
+
+        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai,$statusPerencanaan);
+        if (!$data) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'No data found for the given nama_balai',
+                'data' => []
+            ], 404); 
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => config('constants.SUCCESS_MESSAGE_GET'),
+            'data' => $data
+        ]);
+    }
+
+    public function listPemeriksaanDataByNamaBalai(Request $request)
+    {
+        $namaBalai = $request->query('nama_balai');
+
+        if (empty($namaBalai)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => config('constants.ERROR_MESSAGE_GET'),
+                'data' => []
+            ], 400);
+        }
+
+        $statusPengumpulan = config("constants.STATUS_PEMERIKSAAN");
+
+        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai, $statusPengumpulan);
+        if (!$data) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'No data found for the given nama_balai',
+                'data' => []
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => config('constants.SUCCESS_MESSAGE_GET'),
+            'data' => $data
+        ]);
+    }
+
     public function getInformasiUmumByPerencanaanId($id)
     {
         try {

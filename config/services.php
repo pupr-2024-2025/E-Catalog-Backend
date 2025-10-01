@@ -30,5 +30,9 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
-
+    'sipasti' => [
+        'jwt_secret' => env('SIPASTI_JWT_SECRET'),
+        'jwt_algo'   => env('SIPASTI_JWT_ALGO', 'HS256'),
+        'jwt_leeway' => (int) env('SIPASTI_JWT_LEEWAY', 5),
+    ]
 ];

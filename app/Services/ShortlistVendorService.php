@@ -7,6 +7,7 @@ use App\Models\PerencanaanData;
 use App\Models\ShortlistVendor;
 use App\Models\KuisionerPdfData;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ShortlistVendorService
 {
@@ -26,27 +27,24 @@ class ShortlistVendorService
                 ->map(fn($s) => trim((string) $s));
         };
 
-        // Helper bikin keywords: kata1 & kata1+kata2 (case-insensitive)
         $makeKeywords = function (Collection $strings): Collection {
             return $strings
                 ->map(fn($s) => mb_strtolower($s, 'UTF-8'))
                 ->flatMap(function ($str) {
                     $parts = preg_split('/\s+/u', trim($str));
                     if (!$parts || $parts[0] === '') return [];
-                    $out = [$parts[0]]; // kata pertama
-                    if (count($parts) > 1) $out[] = $parts[0] . ' ' . $parts[1]; // kata1+kata2
+                    $out = [$parts[0]];
+                    if (count($parts) > 1) $out[] = $parts[0] . ' ' . $parts[1];
                     return $out;
                 })
                 ->map(fn($s) => trim(preg_replace('/\s+/u', ' ', $s)))
                 ->filter();
         };
 
-        // Kumpulkan frasa per kategori
         $materials   = $phrasesOf('material',   'nama_material');
         $peralatans  = $phrasesOf('peralatan',  'nama_peralatan');
         $tenagaKerja = $phrasesOf('tenagaKerja', 'jenis_tenaga_kerja');
 
-        // Keywords unik per kategori
         $keywordsByKey = [
             'material'      => $makeKeywords($materials)->unique()->values()->all(),
             'peralatan'     => $makeKeywords($peralatans)->unique()->values()->all(),
@@ -56,16 +54,35 @@ class ShortlistVendorService
         return $keywordsByKey;
     }
 
+    private function selectedVendorIdMap(int $identifikasiId): array
+    {
+        $ids = ShortlistVendor::where('shortlist_vendor_id', $identifikasiId)
+            ->pluck('data_vendor_id')
+            ->all();
+        return array_fill_keys(array_map('strval', $ids), true);
+    }
+
+    private function selectedResourcesForVendor(int $identifikasiId, int $vendorId): array
+    {
+        $row = KuisionerPdfData::where('shortlist_id', $identifikasiId)
+            ->where('vendor_id', $vendorId)
+            ->first();
+
+        return [
+            'material'     => $row && $row->material_id     ? json_decode($row->material_id, true)     : [],
+            'peralatan'    => $row && $row->peralatan_id    ? json_decode($row->peralatan_id, true)    : [],
+            'tenaga_kerja' => $row && $row->tenaga_kerja_id ? json_decode($row->tenaga_kerja_id, true) : [],
+        ];
+    }
+
     public function getDataVendor($id)
     {
         $resultArray = $this->getIdentifikasiKebutuhanByIdentifikasiId($id);
-        // dd($resultArray);
 
         $queryDataVendors = DataVendor::query()
             ->withWhereHas('sumber_daya_vendor', function ($q) use ($resultArray) {
                 $q->where(function ($or) use ($resultArray) {
                     foreach ($resultArray as $jenis => $terms) {
-
                         if (count($terms) !== 0) {
                             $or->orWhere(function ($w) use ($jenis, $terms) {
                                 $w->where('jenis', $jenis)
@@ -104,13 +121,25 @@ class ShortlistVendorService
                 ];
             }
         }
+
+        $selectedMap = $this->selectedVendorIdMap((int)$id);
+
+        foreach (['material', 'peralatan', 'tenaga_kerja'] as $jenis) {
+            if (!isset($result[$jenis])) continue;
+
+            $result[$jenis] = array_map(function (array $row) use ($selectedMap, $id) {
+                $isSelected = isset($selectedMap[(string)$row['id']]);
+                $row['is_selected'] = $isSelected;
+                $row['selected_resources'] = $this->selectedResourcesForVendor((int)$id, (int)$row['id']);
+                return $row;
+            }, $result[$jenis]);
+        }
+
         return $result;
     }
 
     public function storeShortlistVendor($data, $shortlistVendorId)
     {
-        //$makeKuisioner = app(GeneratePdfService::class)->generatePdfMaterialNatural($data['data_vendor_id']);
-
         $shortlistVendorArray = [
             'data_vendor_id' => $data['data_vendor_id'],
             'shortlist_vendor_id' => $shortlistVendorId,
@@ -134,7 +163,7 @@ class ShortlistVendorService
 
     public function getShortlistVendorResult($id)
     {
-        return ShortlistVendor::where('shortlist_vendor_id', $id)->get;
+        return ShortlistVendor::where('shortlist_vendor_id', $id)->get();
     }
 
     private function eleminationArray(array $array1, array $array2)
@@ -169,7 +198,6 @@ class ShortlistVendorService
             },
         ])
             ->where('shortlist_vendor.id', $shortlistId)
-            // Pastikan relasi untuk identifikasi_kebutuhan_id tertentu memang ada
             ->where(function ($q) use ($informasiUmumId) {
                 $q->whereHas('material', fn($s) => $s->where('identifikasi_kebutuhan_id', $informasiUmumId))
                     ->orWhereHas('peralatan', fn($s) => $s->where('identifikasi_kebutuhan_id', $informasiUmumId))
@@ -189,20 +217,17 @@ class ShortlistVendorService
             ];
         }
 
-        // --- FIX 1: dukung delimiter ; atau , lalu normalisasi ---
         $tokens = [];
         if (!empty($query->sumber_daya)) {
-            // split pakai ; atau , (atau kombinasi)
             $parts = preg_split('/[;,]+/', (string)$query->sumber_daya);
             $tokens = collect($parts)
                 ->map(fn($x) => mb_strtolower(trim($x)))
-                ->filter()   // buang kosong
+                ->filter()
                 ->unique()
                 ->values()
                 ->all();
         }
 
-        // Early return kalau memang tidak ada token
         if (empty($tokens)) {
             return [
                 'id_vendor' => (int)$query->data_vendor_id,
@@ -220,26 +245,21 @@ class ShortlistVendorService
             'tenaga_kerja' => [],
         ];
 
-        // Helper untuk cek substring case-insensitive
         $contains = function (string $haystack, string $needle): bool {
             return mb_stripos($haystack, $needle) !== false;
         };
 
-        // --- Cocokkan token ke tiap relasi (gunakan properti, bukan array) ---
         foreach ($tokens as $t) {
-            // material
             foreach ($query->material ?? [] as $row) {
                 if ($contains(mb_strtolower($row->nama_material), $t)) {
-                    $identifikasi['material'][$row->id] = $row; // pakai key id biar unik
+                    $identifikasi['material'][$row->id] = $row;
                 }
             }
-            // peralatan
             foreach ($query->peralatan ?? [] as $row) {
                 if ($contains(mb_strtolower($row->nama_peralatan), $t)) {
                     $identifikasi['peralatan'][$row->id] = $row;
                 }
             }
-            // tenaga_kerja
             foreach ($query->tenaga_kerja ?? [] as $row) {
                 if ($contains(mb_strtolower($row->jenis_tenaga_kerja), $t)) {
                     $identifikasi['tenaga_kerja'][$row->id] = $row;
@@ -247,7 +267,6 @@ class ShortlistVendorService
             }
         }
 
-        // reset ke array numerik
         foreach ($identifikasi as $k => $v) {
             $identifikasi[$k] = array_values($v);
         }
@@ -255,10 +274,8 @@ class ShortlistVendorService
         return $identifikasi;
     }
 
-
     public function saveKuisionerPdfData($idVendor, $idShortlistVendor, $material, $peralatan, $tenagaKerja)
     {
-
         $kuisionerData = KuisionerPdfData::updateOrCreate(
             ['shortlist_id' => $idShortlistVendor, 'vendor_id' => $idVendor],
             [
@@ -273,7 +290,6 @@ class ShortlistVendorService
 
     public function saveUrlPdf($vendorId, $shortlistVendorId, $url)
     {
-
         $dataVendor = DataVendor::find($vendorId);
         if (!$dataVendor) {
             throw new \Exception("DataVendor with id $vendorId not found.");

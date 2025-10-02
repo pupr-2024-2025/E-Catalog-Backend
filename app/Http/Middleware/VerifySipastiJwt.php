@@ -133,6 +133,7 @@ class VerifySipastiJwt
                 'id_roles'         => $model->id_roles,
                 'status'           => $model->status,
                 'balai_kerja_id'   => $model->balai_kerja_id,
+                'balai_kerja'      => $namaBalai,
                 'satuan_kerja_id'  => $model->satuan_kerja_id,
                 'user_id_sipasti'  => $model->user_id_sipasti,
             ],

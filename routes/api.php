@@ -134,6 +134,7 @@ Route::middleware(['sipasti.jwt'])->group(function () {
     Route::get('/pj-balai/list-perencanaan-by-nama-balai', [PerencanaanDataController::class, "listPerencanaanDataByNamaBalai"]);
     Route::get('/pj-balai/list-pengumpulan-by-nama-balai', [PengumpulanDataController::class, "listPengumpulanDataByNamaBalai"]);
     Route::get('/pj-balai/list-pemeriksaan-by-nama-balai', [PengumpulanDataController::class, "listPemeriksaanDataByNamaBalai"]);
+    Route::patch("pj-balai/unassign-penugasan-and-role",[UsersController::class,"unassignRoleAndPenugasan"]);
 });
 
 Route::get('/test-email', function () {

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UsersController extends Controller
@@ -295,43 +296,65 @@ class UsersController extends Controller
 
     public function listUserByNamaBalai(Request $request)
     {
+        // Ambil dari token (fallback)
+        $authUser      = $request->attributes->get('auth_user', []);
+        $authBalaiId   = $authUser['balai_kerja_id'] ?? null;   // ID balai dari token
+        $authBalaiName = $authUser['balai_kerja']    ?? null;   // NAMA balai dari token (jika ada)
 
-        $namaBalai = $request->query('nama_balai');
+        // Ambil dari query (prioritas), fallback ke auth
+        $balaiKey  = $request->query('balai_key',  $authBalaiId);
+        $namaBalai = $request->query('nama_balai', $authBalaiName);
 
-        $validator = Validator::make($request->only(['balai_key', 'nama_balai']), [
-            'balai_key'  => 'nullable|string|required_without:nama_balai',
-            'nama_balai' => 'nullable|string|required_without:balai_key',
-        ], [
-            'balai_key.required_without'  => 'Parameter balai_key wajib diisi jika nama_balai tidak ada.',
-            'nama_balai.required_without' => 'Parameter nama_balai wajib diisi jika balai_key tidak ada.',
-        ]);
+        // Validasi: salah satu wajib ada
+        $validator = Validator::make(
+            ['balaiKey' => $balaiKey, 'namaBalai' => $namaBalai],
+            [
+                'balaiKey'  => ['nullable', 'required_without:namaBalai', 'bail', 'integer'],
+                'namaBalai' => ['nullable', 'required_without:balaiKey', 'bail', 'string'],
+            ],
+            [
+                'balaiKey.required_without'  => 'Parameter balai_key wajib diisi jika nama_balai tidak ada.',
+                'namaBalai.required_without' => 'Parameter nama_balai wajib diisi jika balai_key tidak ada.',
+            ]
+        );
 
         if ($validator->fails()) {
             return response()->json([
-                'success' => false,
+                'status'  => 'error',
                 'message' => 'Validasi gagal.',
                 'errors'  => $validator->errors(),
-            ], 422);
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $data = [
+        // Siapkan payload ke service (dua nama kunci untuk kompatibilitas)
+        $data = array_filter([
+            'id_balai'   => $balaiKey,
+            'balai_key'  => $balaiKey,
             'nama_balai' => $namaBalai,
-        ];
+        ], static fn($v) => !is_null($v) && $v !== '');
 
-        $result = $this->userService->listUserByNamaBalaiOrIdBalai($data);
-
-        if (!$result) {
+        try {
+            $result = $this->userService->listUserByNamaBalaiOrIdBalai($data);
+        } catch (\Throwable $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'terjadi kesalahan',
-                'data' => []
-            ], 400);
+                'data'    => [],
+            ], Response::HTTP_BAD_REQUEST);
         }
 
+        // Pastikan $result array biasa (bukan Collection) agar outputnya konsisten
+        if ($result instanceof \Illuminate\Support\Collection) {
+            $result = $result->toArray();
+        }
+
+        // ——— Struktur respons HARUS persis seperti contoh ———
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'berhasil menampilkan data',
-            'data' => $result
-        ], 200);
+            'data'    => $result,
+        ], Response::HTTP_OK);
     }
+
+    public function unassignRoleAndPenugasan(Request $request) {}
 }

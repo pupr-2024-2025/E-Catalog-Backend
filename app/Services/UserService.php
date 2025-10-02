@@ -154,10 +154,6 @@ class UserService
         $idBalai   = $data['id_balai']   ?? $data['balai_key'] ?? null;
         $namaBalai = $data['nama_balai'] ?? null;
 
-        // Minimal salah satu wajib ada — sebaiknya ini sudah divalidasi di controller
-        // (required_without) sebelum memanggil service.
-        // if (is_null($idBalai) && is_null($namaBalai)) { ... }
-
         $ROLE_GUEST = 9;
 
         $query = Users::query()
@@ -174,29 +170,29 @@ class UserService
             ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
             ->whereNotNull('users.email_verified_at')
-            ->where('users.id_roles', '!=', 1)   // exclude superadmin
-            ->where('users.id_roles', '=', $ROLE_GUEST) // cuma guest
-            // Filter balai: pakai OR antar id/nama
-            ->where(function ($q) use ($idBalai, $namaBalai) {
-                if (!is_null($idBalai)) {
-                    $q->orWhere('satuan_balai_kerja.id', $idBalai);
-                }
-                if (!is_null($namaBalai)) {
-                    // pakai LIKE supaya fleksibel; ganti '=' bila butuh exact match
-                    $q->orWhere('satuan_balai_kerja.nama', 'LIKE', '%' . $namaBalai . '%');
-                }
+            ->where('users.id_roles', '=', $ROLE_GUEST)
+            ->when($idBalai !== null || $namaBalai !== null, function ($q) use ($idBalai, $namaBalai) {
+                $q->where(function ($sub) use ($idBalai, $namaBalai) {
+                    if (!is_null($idBalai)) {
+                        $sub->orWhere('satuan_balai_kerja.id', $idBalai);
+                    }
+                    if (!is_null($namaBalai)) {
+                        $sub->orWhere('satuan_balai_kerja.nama', 'LIKE', '%' . $namaBalai . '%');
+                    }
+                });
             });
 
         $users = $query->get();
 
+        // mapping agar key & urutan field sama persis
         return $users->map(function ($user) {
             return [
-                'user_id'          => $user->user_id,
-                'nama_lengkap'     => $user->nama_lengkap,
-                'nrp'              => $user->nrp,
-                'satuan_kerja_name' => $user->satuan_kerja_name,
-                'role'             => $user->role,
-                'surat_penugasan'  => $user->surat_penugasan,
+                'user_id'           => (int) $user->user_id,
+                'nama_lengkap'      => $user->nama_lengkap,
+                'nrp'               => $user->nrp,                 // bisa null
+                'satuan_kerja_name' => $user->satuan_kerja_name,   // bisa null
+                'role'              => $user->role,                // ekspektasi "guest"
+                'surat_penugasan'   => $user->surat_penugasan,     // bisa null
             ];
         })->values();
     }

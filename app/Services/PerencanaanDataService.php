@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PerencanaanData;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PerencanaanDataService
@@ -107,25 +108,25 @@ class PerencanaanDataService
             ->get();
     }
 
-    public function listPerencanaanDataByNamaBalai($nama_balai,$status)
+    public function listPerencanaanDataByBalaiId(int $balaiId, array|string $statuses)
     {
-        $result = PerencanaanData::join('informasi_umum', 'perencanaan_data.informasi_umum_id', '=', 'informasi_umum.id')
-            ->join("satuan_balai_kerja", "informasi_umum.nama_balai", "=", "satuan_balai_kerja.id")
-            ->whereRaw('TRIM(UPPER(satuan_balai_kerja.nama)) = TRIM(UPPER(?))', [$nama_balai])
-            ->where("status",'=',$status)
-            // ->whereIn('perencanaan_data.status', $filteredStatuses)
+        $statusValues = is_array($statuses) ? $statuses : [$statuses];
+        return PerencanaanData::withoutGlobalScopes()
+            ->from('perencanaan_data as pd')
+            ->join('informasi_umum as iu', 'pd.informasi_umum_id', '=', 'iu.id')
+            ->join('satuan_balai_kerja as sbk', 'sbk.id', '=', 'iu.nama_balai')
+            ->where("iu.nama_balai", $balaiId)
+            ->whereIn("pd.status", $statusValues)
             ->select([
-                'perencanaan_data.informasi_umum_id As id',
-                'perencanaan_data.status',
-                'informasi_umum.nama_paket',
-                'informasi_umum.nama_balai as id_balai',
-                'satuan_balai_kerja.nama as nama_balai',
-                'informasi_umum.nama_ppk',
-                'informasi_umum.jabatan_ppk',
-                'informasi_umum.kode_rup'
+                'pd.informasi_umum_id AS id',
+                'pd.status',
+                'iu.nama_paket',
+                DB::raw('CAST(iu.nama_balai AS UNSIGNED) AS id_balai'),
+                'sbk.nama AS nama_balai',
+                'iu.nama_ppk',
+                'iu.jabatan_ppk',
+                'iu.kode_rup',
             ])
             ->get();
-
-        return $result;
     }
 }

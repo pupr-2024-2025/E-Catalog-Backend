@@ -154,9 +154,10 @@ class PengumpulanDataController extends Controller
 
     public function listPengumpulanDataByNamaBalai(Request $request)
     {
-        $namaBalai = $request->query('nama_balai');
+        $authUser  = $request->attributes->get('auth_user', []);
+        $idBalai = $authUser["balai_kerja_id"] ?? $request->query('nama_balai');
 
-        if (empty($namaBalai)) {
+        if (empty($idBalai)) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_GET'),
@@ -166,7 +167,7 @@ class PengumpulanDataController extends Controller
 
         $statusPengumpulan = config("constants.STATUS_PENGUMPULAN");
 
-        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai, $statusPengumpulan);
+        $data = $this->perencanaanDataService->listPerencanaanDataByBalaiId($idBalai, $statusPengumpulan);
         if (!$data) {
             return response()->json([
                 'status' => 'success',
@@ -184,9 +185,10 @@ class PengumpulanDataController extends Controller
 
     public function listPemeriksaanDataByNamaBalai(Request $request)
     {
-        $namaBalai = $request->query('nama_balai');
+        $authUser  = $request->attributes->get('auth_user', []);
+        $idBalai = $authUser['balai_kerja_id'] ?? $request->query('nama_balai');
 
-        if (empty($namaBalai)) {
+        if (empty($idBalai)) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_GET'),
@@ -196,7 +198,7 @@ class PengumpulanDataController extends Controller
 
         $statusPengumpulan = config("constants.STATUS_PEMERIKSAAN");
 
-        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai, $statusPengumpulan);
+        $data = $this->perencanaanDataService->listPerencanaanDataByBalaiId($idBalai, $statusPengumpulan);
         if (!$data) {
             return response()->json([
                 'status' => 'success',
@@ -746,7 +748,7 @@ class PengumpulanDataController extends Controller
                 'status' => 'error',
                 'message' => 'Gagal menyimpan data!',
                 'error' => $e->getMessage()
-            ],400);
+            ], 400);
         }
     }
 

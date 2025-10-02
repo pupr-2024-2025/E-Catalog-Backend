@@ -10,6 +10,7 @@ use App\Services\PerencanaanDataService;
 use App\Services\GeneratePdfService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Response;
 
 class PerencanaanDataController extends Controller
 {
@@ -116,42 +117,42 @@ class PerencanaanDataController extends Controller
         }
     }
 
-    
     public function listPerencanaanDataByNamaBalai(Request $request)
     {
-        $namaBalai = $request->query('nama_balai');
+        $authUser  = $request->attributes->get('auth_user', []);
+        $idBalai = $authUser['balai_kerja_id'] ?? $request->query('nama_balai');
 
-        if (empty($namaBalai)) {
+        if (empty($idBalai)) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_GET'),
                 'data' => []
-            ], 400);
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $statusPerencanaan = config('constants.STATUS_PERENCANAAN');
-
-        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai,$statusPerencanaan);
+        $data = $this->perencanaanDataService->listPerencanaanDataByBalaiId($idBalai, $statusPerencanaan);
         if (!$data) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'No data found for the given nama_balai',
                 'data' => []
-            ], 404); 
+            ], Response::HTTP_NOT_FOUND);
         }
 
         return response()->json([
             'status' => 'success',
             'message' => config('constants.SUCCESS_MESSAGE_GET'),
             'data' => $data
-        ]);
+        ], Response::HTTP_OK);
     }
 
     public function listPengumpulanDataByNamaBalai(Request $request)
     {
-        $namaBalai = $request->query('nama_balai');
+        $authUser  = $request->attributes->get('auth_user', []);
+        $idBalai = $authUser['balai_kerja_id'] ?? $request->query('nama_balai');
 
-        if (empty($namaBalai)) {
+        if (empty($idBalai)) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_GET'),
@@ -161,13 +162,13 @@ class PerencanaanDataController extends Controller
 
         $statusPerencanaan = config('constants.STATUS_PENGUMPULAN');
 
-        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai,$statusPerencanaan);
+        $data = $this->perencanaanDataService->listPerencanaanDataByBalaiId($idBalai, $statusPerencanaan);
         if (!$data) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'No data found for the given nama_balai',
                 'data' => []
-            ], 404); 
+            ], 404);
         }
 
         return response()->json([
@@ -179,9 +180,9 @@ class PerencanaanDataController extends Controller
 
     public function listPemeriksaanDataByNamaBalai(Request $request)
     {
-        $namaBalai = $request->query('nama_balai');
-
-        if (empty($namaBalai)) {
+        $authUser  = $request->attributes->get('auth_user', []);
+        $idBalai = $authUser['balai_kerja_id'] ?? $request->query('nama_balai');
+        if (empty($idBalai)) {
             return response()->json([
                 'status' => 'error',
                 'message' => config('constants.ERROR_MESSAGE_GET'),
@@ -191,7 +192,7 @@ class PerencanaanDataController extends Controller
 
         $statusPengumpulan = config("constants.STATUS_PEMERIKSAAN");
 
-        $data = $this->perencanaanDataService->listPerencanaanDataByNamaBalai($namaBalai, $statusPengumpulan);
+        $data = $this->perencanaanDataService->listPerencanaanDataByBalaiId($idBalai, $statusPengumpulan);
         if (!$data) {
             return response()->json([
                 'status' => 'success',

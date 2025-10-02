@@ -174,6 +174,7 @@ class UsersController extends Controller
             "user_id_sipasti" => $user->user_id_sipasti,
             "satuan_kerja" => $user->satuanKerja->nama ?? null,
             "balai_kerja" => $user->balaiSatuanKerja->nama ?? null,
+            "balai_id" => $user->balaiSatuanKerja->id,
             "surat_penugasan_url" => $user->surat_penugasan_url,
         ];
 
@@ -186,21 +187,29 @@ class UsersController extends Controller
 
     public function listByRoleAndByBalai(Request $request)
     {
-
-        $balaiKey = $request->query('balai_key');
+        $authUser = $request->attributes->get('auth_user', []);
+        $balaiKey =  $request->query("balai_key") ?? $authUser['balai_kerja_id'];
         $role = $request->query('role');
 
-        // ✅ Step 2: Validate both parameters
+        // ✅ Validasi parameter
         $validator = Validator::make([
             'balai_key' => $balaiKey,
             'role'      => $role,
         ], [
-            'balai_key' => 'required|string|min:1',
-            'role'      => ['required', 'string', Rule::in(['pengawas', 'petugas lapangan', 'pengolah data', 'tim teknis balai', 'guest'])],
+            'balai_key' => 'required|integer|min:1',
+            'role'      => ['required', 'string', Rule::in([
+                'pengawas',
+                'petugas lapangan',
+                'pengolah data',
+                'tim teknis balai',
+                'guest'
+            ])],
         ], [
             'balai_key.required' => 'Parameter balai_key wajib disertakan.',
-            'balai_key.string'   => 'Parameter balai_key harus berupa teks.',
+            'balai_key.integer'  => 'Parameter balai_key harus berupa angka.',
+            'balai_key.min'      => 'Parameter balai_key minimal bernilai 1.',
             'role.required'      => 'Parameter role wajib disertakan.',
+            'role.string'        => 'Parameter role harus berupa teks.',
             'role.in'            => 'Role tidak valid.',
         ]);
 
@@ -213,7 +222,7 @@ class UsersController extends Controller
         }
 
         $data = [
-            'balai_key' => $balaiKey,
+            'balai_key' => (int) $balaiKey, // pastikan integer
             'role'      => $role,
         ];
 
@@ -222,14 +231,14 @@ class UsersController extends Controller
         if (!$result) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'terjadi kesalahan',
+                'message' => 'Terjadi kesalahan saat mengambil data.',
                 'data' => []
             ], 400);
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'berhasil menampilkan data',
+            'message' => 'Berhasil menampilkan data.',
             'data' => $result
         ], 200);
     }

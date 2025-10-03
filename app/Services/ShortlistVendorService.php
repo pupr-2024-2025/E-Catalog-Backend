@@ -124,16 +124,25 @@ class ShortlistVendorService
 
         $identifikasiId = (int) $id;
 
+        $selectedByVendorId = $this->selectedVendorIdMap($identifikasiId);
+
         foreach (['material', 'peralatan', 'tenaga_kerja'] as $jenis) {
             if (!isset($result[$jenis])) {
                 continue;
             }
 
-            $result[$jenis] = array_map(function (array $row) use ($identifikasiId, $jenis) {
+            $result[$jenis] = array_map(function (array $row) use ($identifikasiId, $jenis, $selectedByVendorId) {
                 $vendorId = (int) $row['id'];
 
                 $row['selected_resources'] = $this->selectedResourcesForVendor($identifikasiId, $vendorId);
-                $row['is_selected'] = count($row['selected_resources'][$jenis] ?? []) > 0;
+
+                $isSelected = count($row['selected_resources'][$jenis] ?? []) > 0;
+
+                if (!$isSelected && isset($selectedByVendorId[(string)$vendorId])) {
+                    $isSelected = true;
+                }
+
+                $row['is_selected'] = $isSelected;
 
                 return $row;
             }, $result[$jenis]);
@@ -141,6 +150,7 @@ class ShortlistVendorService
 
         return $result;
     }
+
 
     public function storeShortlistVendor($data, $shortlistVendorId)
     {

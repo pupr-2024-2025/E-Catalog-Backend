@@ -76,6 +76,7 @@ Route::middleware(['sipasti.jwt'])->group(function () {
 
     Route::get('/perencanaan-data/get-data-vendor/{id}', [PerencanaanDataController::class, 'getAllDataVendor']);
     Route::post('/perencanaan-data/store-shortlist-vendor', [PerencanaanDataController::class, 'selectDataVendor']);
+    
     Route::get('/perencanaan-data/perencanaan-data-result', [PerencanaanDataController::class, 'perencanaanDataResult']);
     Route::get('/perencanaan-data/shortlist-detail-identifikasi', [PerencanaanDataController::class, 'getShortlistVendorSumberDaya']);
     Route::post('/perencanaan-data/adjust-identifikasi-kebutuhan', [PerencanaanDataController::class, 'adjustShortlistVendor']);

@@ -7,6 +7,7 @@ use App\Models\PerencanaanData;
 use App\Models\ShortlistVendor;
 use App\Models\KuisionerPdfData;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ShortlistVendorService
 {
@@ -61,12 +62,41 @@ class ShortlistVendorService
         $resultArray = $this->getIdentifikasiKebutuhanByIdentifikasiId($id);
         // dd($resultArray);
 
+        // $queryDataVendors = DataVendor::query()
+        //     ->withWhereHas('sumber_daya_vendor', function ($q) use ($resultArray) {
+        //         $q->where(function ($or) use ($resultArray) {
+        //             foreach ($resultArray as $jenis => $terms) {
+
+        //                 if (count($terms) !== 0) {
+        //                     $or->orWhere(function ($w) use ($jenis, $terms) {
+        //                         $w->where('jenis', $jenis)
+        //                             ->where(function ($names) use ($terms) {
+        //                                 foreach ($terms as $t) {
+        //                                     $names->orWhereRaw('LOWER(nama) LIKE ?', ['%' . mb_strtolower($t, 'UTF-8') . '%']);
+        //                                 }
+        //                             });
+        //                     });
+        //                 }
+        //             }
+        //         });
+        //     })
+        //     ->get();
+
         $queryDataVendors = DataVendor::query()
+            ->whereHas('shortlist_vendor', function ($q) use ($id) {
+                $q->where('shortlist_vendor_id', $id);
+            })
+            ->with([
+                'shortlist_vendor' => function ($q) use ($id) {
+                    $q->select('id', 'data_vendor_id', 'shortlist_vendor_id', 'is_checked')
+                        ->where('shortlist_vendor_id', $id);
+                },
+                'sumber_daya_vendor',
+            ])
             ->withWhereHas('sumber_daya_vendor', function ($q) use ($resultArray) {
                 $q->where(function ($or) use ($resultArray) {
                     foreach ($resultArray as $jenis => $terms) {
-
-                        if (count($terms) !== 0) {
+                        if (!empty($terms)) {
                             $or->orWhere(function ($w) use ($jenis, $terms) {
                                 $w->where('jenis', $jenis)
                                     ->where(function ($names) use ($terms) {
@@ -85,8 +115,17 @@ class ShortlistVendorService
         foreach ($queryDataVendors as $vendor) {
             $grouped = collect($vendor->sumber_daya_vendor)->groupBy('jenis');
 
+            $sl = $vendor->shortlist_vendor->first(); // sudah difilter per shortlist_vendor_id
+
+            $shortlistPK = $sl->id;
+
+            // Aman: ambil mentah 0/1
+            $isCheckedInt = $sl->getRawOriginal('is_checked'); // 0 atau 1
+
             foreach ($grouped as $jenis => $list) {
                 $result[$jenis][] = [
+                    'shortlist_vendor_primary_key' => $shortlistPK,
+                    'is_checked'                   => $isCheckedInt,
                     'id' => $vendor->id,
                     'nama_vendor' => $vendor->nama_vendor,
                     'pemilik' => $vendor->nama_pic,
@@ -98,9 +137,9 @@ class ShortlistVendorService
                             'id'          => $sd['id'],
                             'jenis'       => $sd['jenis'],
                             'nama'        => $sd['nama'],
-                            'spesifikasi' => $sd['spesifikasi']
+                            'spesifikasi' => $sd['spesifikasi'],
                         ];
-                    })->toArray()
+                    })->toArray(),
                 ];
             }
         }

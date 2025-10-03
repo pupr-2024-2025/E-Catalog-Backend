@@ -235,9 +235,9 @@ class PerencanaanDataController extends Controller
 
     public function storeIdentifikasiKebutuhan(Request $request)
     {
-
         try {
             $identifikasiKebutuhanId = $request->informasi_umum_id;
+
             $materialResult = [];
             foreach ($request->material as $material) {
                 $materialResult[] = $this->IdentifikasiKebutuhanService->storeMaterial($material, $identifikasiKebutuhanId);
@@ -253,27 +253,28 @@ class PerencanaanDataController extends Controller
                 $tenagaKerjaResult[] = $this->IdentifikasiKebutuhanService->storeTenagaKerja($tenagaKerja, $identifikasiKebutuhanId);
             }
 
-            //update to perencanaan_data table
             $this->perencanaanDataService->updatePerencanaanData($identifikasiKebutuhanId, 'identifikasi_kebutuhan', $identifikasiKebutuhanId);
             $this->perencanaanDataService->changeStatusPerencanaanData(config('constants.STATUS_PERENCANAAN'), $identifikasiKebutuhanId);
 
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Data berhasil disimpan!',
-                'data' => [
-                    'material' => $materialResult,
-                    'peralatan' => $peralatanResult,
-                    'tenaga_kerja' => $tenagaKerjaResult,
+                'data'    => [
+                    'material'      => $materialResult,
+                    'peralatan'     => $peralatanResult,
+                    'tenaga_kerja'  => $tenagaKerjaResult,
+                    'is_filled'     => true,
                 ]
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Gagal menyimpan data!',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ]);
         }
     }
+
 
     public function getAllDataVendor($identifikasiKebutuhanId)
     {
@@ -377,20 +378,24 @@ class PerencanaanDataController extends Controller
 
     public function identifikasiKebutuhanResult(Request $request)
     {
-        $getMaterial = $this->IdentifikasiKebutuhanService->getIdentifikasiKebutuhanByPerencanaanId('material', $request);
-        $getPeralatan = $this->IdentifikasiKebutuhanService->getIdentifikasiKebutuhanByPerencanaanId('peralatan', $request);
+        $getMaterial   = $this->IdentifikasiKebutuhanService->getIdentifikasiKebutuhanByPerencanaanId('material', $request);
+        $getPeralatan  = $this->IdentifikasiKebutuhanService->getIdentifikasiKebutuhanByPerencanaanId('peralatan', $request);
         $getTenagaKerja = $this->IdentifikasiKebutuhanService->getIdentifikasiKebutuhanByPerencanaanId('tenaga_kerja', $request);
 
+        $isFilled = (count($getMaterial) > 0) || (count($getPeralatan) > 0) || (count($getTenagaKerja) > 0);
+
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'Data berhasil didapat!',
-            'data' => [
-                'material' => $getMaterial,
-                'peralatan' => $getPeralatan,
-                'tenaga_kerja' => $getTenagaKerja,
+            'data'    => [
+                'material'      => $getMaterial,
+                'peralatan'     => $getPeralatan,
+                'tenaga_kerja'  => $getTenagaKerja,
+                'is_filled'     => $isFilled,
             ],
         ]);
     }
+
 
     public function shortlistVendorResult(Request $request)
     {
@@ -527,24 +532,33 @@ class PerencanaanDataController extends Controller
     public function getIdentifikasiKebutuhanStored($informasiUmumId)
     {
         $perencanaanData = $this->perencanaanDataService->listAllPerencanaanData($informasiUmumId);
+
         if (!empty($perencanaanData)) {
+            $material = $perencanaanData['material']   ?? [];
+            $peralatan = $perencanaanData['peralatan']  ?? [];
+            $tenaga   = $perencanaanData['tenagaKerja'] ?? [];
+
+            $isFilled = (count($material) > 0) || (count($peralatan) > 0) || (count($tenaga) > 0);
+
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => config('constants.SUCCESS_MESSAGE_GET'),
-                'data' => [
-                    'material' => $perencanaanData['material'],
-                    'peralatan' => $perencanaanData['peralatan'],
-                    'tenaga_kerja' => $perencanaanData['tenagaKerja'],
+                'data'    => [
+                    'material'      => $material,
+                    'peralatan'     => $peralatan,
+                    'tenaga_kerja'  => $tenaga,
+                    'is_filled'     => $isFilled,
                 ]
             ]);
         } else {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => config('constants.ERROR_MESSAGE_GET'),
-                'data' => []
+                'data'    => []
             ]);
         }
     }
+
 
     public function changeStatusPerencanaan($informasiUmumId)
     {

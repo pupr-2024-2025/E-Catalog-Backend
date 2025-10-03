@@ -9,13 +9,13 @@ use Illuminate\Validation\ValidationException;
 
 class IdentifikasiKebutuhanService
 {
-    public function storeMaterial(array $dataMaterial, int $identifikasiKebutuhanId)
+    public function storeMaterial(array $dataMaterial, string $identifikasiKebutuhanId)
     {
         $row = !empty($dataMaterial['id'])
             ? Material::find($dataMaterial['id'])
             : new Material();
 
-        if ($row && $row->exists && (int) $row->identifikasi_kebutuhan_id !== (int) $identifikasiKebutuhanId) {
+        if ($row && $row->exists && $row->identifikasi_kebutuhan_id !== $identifikasiKebutuhanId) {
             throw ValidationException::withMessages([
                 'id' => ['Tidak boleh mengubah data milik identifikasi lain.']
             ]);
@@ -38,13 +38,13 @@ class IdentifikasiKebutuhanService
         return $row->refresh();
     }
 
-    public function storePeralatan(array $dataPeralatan, int $identifikasiKebutuhanId)
+    public function storePeralatan(array $dataPeralatan, string  $identifikasiKebutuhanId)
     {
         $row = !empty($dataPeralatan['id'])
             ? Peralatan::find($dataPeralatan['id'])
             : new Peralatan();
 
-        if ($row && $row->exists && (int) $row->identifikasi_kebutuhan_id !== (int) $identifikasiKebutuhanId) {
+        if ($row && $row->exists && $row->identifikasi_kebutuhan_id !== $identifikasiKebutuhanId) {
             throw ValidationException::withMessages([
                 'id' => ['Tidak boleh mengubah data milik identifikasi lain.']
             ]);
@@ -67,13 +67,13 @@ class IdentifikasiKebutuhanService
         return $row->refresh();
     }
 
-    public function storeTenagaKerja(array $dataTenagaKerja, int $identifikasiKebutuhanId)
+    public function storeTenagaKerja(array $dataTenagaKerja, string  $identifikasiKebutuhanId)
     {
         $row = !empty($dataTenagaKerja['id'])
             ? TenagaKerja::find($dataTenagaKerja['id'])
             : new TenagaKerja();
 
-        if ($row && $row->exists && (int) $row->identifikasi_kebutuhan_id !== (int) $identifikasiKebutuhanId) {
+        if ($row && $row->exists && $row->identifikasi_kebutuhan_id !== $identifikasiKebutuhanId) {
             throw ValidationException::withMessages([
                 'id' => ['Tidak boleh mengubah data milik identifikasi lain.']
             ]);

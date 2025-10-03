@@ -60,6 +60,9 @@ class PerencanaanDataController extends Controller
 
     public function storeInformasiUmumData(Request $request)
     {
+        $userAuth = $request->attributes->get('auth_user', []);
+        $idBalai = $userAuth['balai_kerja_id'];
+        
         $rules = [
             'tipe_informasi_umum' => 'required',
             'nama_paket' => 'required',
@@ -92,7 +95,7 @@ class PerencanaanDataController extends Controller
         // }
 
         try {
-            $saveInformasiUmum = $this->informasiUmumService->saveInformasiUmum($request);
+            $saveInformasiUmum = $this->informasiUmumService->saveInformasiUmum($request, $idBalai);
             if (!$saveInformasiUmum) {
                 return response()->json([
                     'status' => 'error',

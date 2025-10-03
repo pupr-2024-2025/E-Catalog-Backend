@@ -7,7 +7,6 @@ use App\Models\PerencanaanData;
 use App\Models\ShortlistVendor;
 use App\Models\KuisionerPdfData;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class ShortlistVendorService
 {
@@ -17,7 +16,8 @@ class ShortlistVendorService
             'material:id,identifikasi_kebutuhan_id,nama_material,spesifikasi,ukuran',
             'peralatan:id,identifikasi_kebutuhan_id,nama_peralatan,spesifikasi,kapasitas',
             'tenagaKerja:id,identifikasi_kebutuhan_id,jenis_tenaga_kerja'
-        ])->select('identifikasi_kebutuhan_id')->where('identifikasi_kebutuhan_id', $id)
+        ])->select('identifikasi_kebutuhan_id')
+            ->where('identifikasi_kebutuhan_id', $id)
             ->get();
 
         $phrasesOf = function (string $rel, string $col) use ($getDataIdentifikasi): Collection {
@@ -41,17 +41,15 @@ class ShortlistVendorService
                 ->filter();
         };
 
-        $materials   = $phrasesOf('material',   'nama_material');
-        $peralatans  = $phrasesOf('peralatan',  'nama_peralatan');
+        $materials   = $phrasesOf('material', 'nama_material');
+        $peralatans  = $phrasesOf('peralatan', 'nama_peralatan');
         $tenagaKerja = $phrasesOf('tenagaKerja', 'jenis_tenaga_kerja');
 
-        $keywordsByKey = [
-            'material'      => $makeKeywords($materials)->unique()->values()->all(),
-            'peralatan'     => $makeKeywords($peralatans)->unique()->values()->all(),
-            'tenaga_kerja'  => $makeKeywords($tenagaKerja)->unique()->values()->all(),
+        return [
+            'material'     => $makeKeywords($materials)->unique()->values()->all(),
+            'peralatan'    => $makeKeywords($peralatans)->unique()->values()->all(),
+            'tenaga_kerja' => $makeKeywords($tenagaKerja)->unique()->values()->all(),
         ];
-
-        return $keywordsByKey;
     }
 
     private function selectedVendorIdMap(int $identifikasiId): array
@@ -83,12 +81,15 @@ class ShortlistVendorService
             ->withWhereHas('sumber_daya_vendor', function ($q) use ($resultArray) {
                 $q->where(function ($or) use ($resultArray) {
                     foreach ($resultArray as $jenis => $terms) {
-                        if (count($terms) !== 0) {
+                        if (count($terms) > 0) {
                             $or->orWhere(function ($w) use ($jenis, $terms) {
                                 $w->where('jenis', $jenis)
                                     ->where(function ($names) use ($terms) {
                                         foreach ($terms as $t) {
-                                            $names->orWhereRaw('LOWER(nama) LIKE ?', ['%' . mb_strtolower($t, 'UTF-8') . '%']);
+                                            $names->orWhereRaw(
+                                                'LOWER(nama) LIKE ?',
+                                                ['%' . mb_strtolower($t, 'UTF-8') . '%']
+                                            );
                                         }
                                     });
                             });
@@ -104,12 +105,12 @@ class ShortlistVendorService
 
             foreach ($grouped as $jenis => $list) {
                 $result[$jenis][] = [
-                    'id' => $vendor->id,
-                    'nama_vendor' => $vendor->nama_vendor,
-                    'pemilik' => $vendor->nama_pic,
-                    'alamat' => $vendor->alamat,
-                    'kontak' => $vendor->no_telepon,
-                    'sumber_daya' => $vendor->sumber_daya,
+                    'id'                => $vendor->id,
+                    'nama_vendor'       => $vendor->nama_vendor,
+                    'pemilik'           => $vendor->nama_pic,
+                    'alamat'            => $vendor->alamat,
+                    'kontak'            => $vendor->no_telepon,
+                    'sumber_daya'       => $vendor->sumber_daya,
                     'sumber_daya_vendor' => $list->map(function ($sd) {
                         return [
                             'id'          => $sd['id'],
@@ -123,7 +124,6 @@ class ShortlistVendorService
         }
 
         $identifikasiId = (int) $id;
-
         $selectedByVendorId = $this->selectedVendorIdMap($identifikasiId);
 
         foreach (['material', 'peralatan', 'tenaga_kerja'] as $jenis) {
@@ -131,18 +131,14 @@ class ShortlistVendorService
                 continue;
             }
 
-            $result[$jenis] = array_map(function (array $row) use ($identifikasiId, $jenis, $selectedByVendorId) {
+            $result[$jenis] = array_map(function (array $row) use ($identifikasiId, $selectedByVendorId) {
                 $vendorId = (int) $row['id'];
 
+                // tetap kirim info resource, tapi checkbox nggak pakai ini
                 $row['selected_resources'] = $this->selectedResourcesForVendor($identifikasiId, $vendorId);
 
-                $isSelected = count($row['selected_resources'][$jenis] ?? []) > 0;
-
-                if (!$isSelected && isset($selectedByVendorId[(string)$vendorId])) {
-                    $isSelected = true;
-                }
-
-                $row['is_selected'] = $isSelected;
+                // ✅ flag hanya dari tabel shortlist_vendor (shortlist_vendor_id + data_vendor_id)
+                $row['is_selected'] = isset($selectedByVendorId[(string)$vendorId]);
 
                 return $row;
             }, $result[$jenis]);
@@ -151,22 +147,21 @@ class ShortlistVendorService
         return $result;
     }
 
-
     public function storeShortlistVendor($data, $shortlistVendorId)
     {
         $shortlistVendorArray = [
-            'data_vendor_id' => $data['data_vendor_id'],
+            'data_vendor_id'      => $data['data_vendor_id'],
             'shortlist_vendor_id' => $shortlistVendorId,
-            'nama_vendor' => $data['nama_vendor'],
-            'pemilik_vendor' => $data['pemilik_vendor'],
-            'alamat' => $data['alamat'],
-            'kontak' => $data['kontak'],
-            'sumber_daya' => $data['sumber_daya']
+            'nama_vendor'         => $data['nama_vendor'],
+            'pemilik_vendor'      => $data['pemilik_vendor'],
+            'alamat'              => $data['alamat'],
+            'kontak'              => $data['kontak'],
+            'sumber_daya'         => $data['sumber_daya']
         ];
 
         $shortlistVendor = ShortlistVendor::updateOrCreate(
             [
-                'data_vendor_id' => $data['data_vendor_id'],
+                'data_vendor_id'      => $data['data_vendor_id'],
                 'shortlist_vendor_id' => $shortlistVendorId
             ],
             $shortlistVendorArray
@@ -183,7 +178,6 @@ class ShortlistVendorService
     private function eleminationArray(array $array1, array $array2)
     {
         $matches = [];
-
         $lowercasedArray1 = array_map('strtolower', $array1);
         $lowercasedArray2 = array_map('strtolower', $array2);
 
@@ -201,15 +195,9 @@ class ShortlistVendorService
     public function getIdentifikasiByShortlist($shortlistId, $informasiUmumId)
     {
         $query = ShortlistVendor::with([
-            'material' => function ($sub) {
-                $sub->select('id', 'identifikasi_kebutuhan_id', 'nama_material', 'satuan', 'spesifikasi', 'merk');
-            },
-            'peralatan' => function ($sub) {
-                $sub->select('id', 'identifikasi_kebutuhan_id', 'nama_peralatan', 'satuan', 'spesifikasi', 'merk');
-            },
-            'tenaga_kerja' => function ($sub) {
-                $sub->select('id', 'identifikasi_kebutuhan_id', 'jenis_tenaga_kerja', 'satuan');
-            },
+            'material' => fn($sub) => $sub->select('id', 'identifikasi_kebutuhan_id', 'nama_material', 'satuan', 'spesifikasi', 'merk'),
+            'peralatan' => fn($sub) => $sub->select('id', 'identifikasi_kebutuhan_id', 'nama_peralatan', 'satuan', 'spesifikasi', 'merk'),
+            'tenaga_kerja' => fn($sub) => $sub->select('id', 'identifikasi_kebutuhan_id', 'jenis_tenaga_kerja', 'satuan'),
         ])
             ->where('shortlist_vendor.id', $shortlistId)
             ->where(function ($q) use ($informasiUmumId) {
@@ -224,8 +212,8 @@ class ShortlistVendorService
             return [
                 'id_vendor' => null,
                 'identifikasi_kebutuhan' => [
-                    'material' => [],
-                    'peralatan' => [],
+                    'material'     => [],
+                    'peralatan'    => [],
                     'tenaga_kerja' => [],
                 ],
             ];
@@ -246,8 +234,8 @@ class ShortlistVendorService
             return [
                 'id_vendor' => (int)$query->data_vendor_id,
                 'identifikasi_kebutuhan' => [
-                    'material' => [],
-                    'peralatan' => [],
+                    'material'     => [],
+                    'peralatan'    => [],
                     'tenaga_kerja' => [],
                 ],
             ];
@@ -259,9 +247,8 @@ class ShortlistVendorService
             'tenaga_kerja' => [],
         ];
 
-        $contains = function (string $haystack, string $needle): bool {
-            return mb_stripos($haystack, $needle) !== false;
-        };
+        $contains = fn(string $haystack, string $needle): bool =>
+        mb_stripos($haystack, $needle) !== false;
 
         foreach ($tokens as $t) {
             foreach ($query->material ?? [] as $row) {
@@ -293,9 +280,9 @@ class ShortlistVendorService
         $kuisionerData = KuisionerPdfData::updateOrCreate(
             ['shortlist_id' => $idShortlistVendor, 'vendor_id' => $idVendor],
             [
-                'material_id' => (count($material)) ? json_encode($material) : null,
-                'peralatan_id' => (count($peralatan)) ? json_encode($peralatan) : null,
-                'tenaga_kerja_id' => (count($tenagaKerja)) ? json_encode($tenagaKerja) : null,
+                'material_id'     => count($material) ? json_encode($material) : null,
+                'peralatan_id'    => count($peralatan) ? json_encode($peralatan) : null,
+                'tenaga_kerja_id' => count($tenagaKerja) ? json_encode($tenagaKerja) : null,
             ]
         );
 
@@ -309,21 +296,17 @@ class ShortlistVendorService
             throw new \Exception("DataVendor with id $vendorId not found.");
         }
 
-        $namaVendor = $dataVendor->nama_vendor;
-        $pemilikVendor = $dataVendor->nama_pic;
-        $alamat = $dataVendor->alamat;
-        $no_telepon = $dataVendor->no_telepon ?? $dataVendor->no_hp;
-
         $data = ShortlistVendor::updateOrCreate(
             ['data_vendor_id' => $vendorId, 'shortlist_vendor_id' => $shortlistVendorId],
             [
-                'url_kuisioner' => $url,
-                'nama_vendor' => $namaVendor,
-                'pemilik_vendor' => $pemilikVendor,
-                'alamat' => $alamat,
-                'kontak' => $no_telepon
+                'url_kuisioner'  => $url,
+                'nama_vendor'    => $dataVendor->nama_vendor,
+                'pemilik_vendor' => $dataVendor->nama_pic,
+                'alamat'         => $dataVendor->alamat,
+                'kontak'         => $dataVendor->no_telepon ?? $dataVendor->no_hp,
             ]
         );
+
         return $data['url_kuisioner'];
     }
 }

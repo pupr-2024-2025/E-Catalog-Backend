@@ -10,7 +10,7 @@ class InformasiUmum extends Model
     use HasFactory;
 
     protected $table = 'informasi_umum';
-    protected $fillable = ['kode_rup', 'nama_paket', 'nama_ppk', 'jabatan_ppk', 'nama_balai', 'identifikasi_id', 'jenis_informasi'];
+    protected $fillable = ['kode_rup', 'nama_paket', 'nama_ppk', 'jabatan_ppk', 'nama_balai', 'identifikasi_id', 'jenis_informasi','tipologi'];
 
     public function perencanaanData()
     {

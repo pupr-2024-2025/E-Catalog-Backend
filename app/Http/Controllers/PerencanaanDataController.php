@@ -69,12 +69,6 @@ class PerencanaanDataController extends Controller
             'nama_ppk' => 'required',
             'jabatan_ppk' => 'required',
         ];
-        if ($request->tipe_informasi_umum == 'manual') {
-            $rules = array_merge($rules, [
-                'nama_balai' => 'required',
-                //'tipologi' => 'required',
-            ]);
-        }
 
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {

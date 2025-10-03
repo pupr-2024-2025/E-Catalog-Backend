@@ -21,15 +21,15 @@ class InformasiUmumService
 
     public function saveInformasiUmum($dataInformasiUmum, $balaiId)
     {
-        // --- Ambil field dari payload (tanpa Request) ---
+        $balaiColumn   = 'nama_balai'; // ganti ke 'balai_id' kalau itu kolom FK yang benar
+        $idPayload     = data_get($dataInformasiUmum, 'id_informasi_umum'); // opsional, kalau ada berarti edit
         $namaPaket     = trim((string) data_get($dataInformasiUmum, 'nama_paket'));
         $tipeInformasi = (string) data_get($dataInformasiUmum, 'tipe_informasi_umum'); // 'sipasti' | 'manual'
-        $kodeRup       = data_get($dataInformasiUmum, 'kode_rup', '');
+        $kodeRup       = (string) data_get($dataInformasiUmum, 'kode_rup', '');
         $jabatanPPK    = data_get($dataInformasiUmum, 'jabatan_ppk');
         $namaPPK       = data_get($dataInformasiUmum, 'nama_ppk');
-        $tipologi      = data_get($dataInformasiUmum, 'tipologi', '');
+        $tipologi      = (string) data_get($dataInformasiUmum, 'tipologi', '');
 
-        // --- Validasi ringan ---
         if ($namaPaket === '') {
             throw ValidationException::withMessages(['nama_paket' => ['Nama paket wajib diisi.']]);
         }
@@ -37,38 +37,91 @@ class InformasiUmumService
             throw ValidationException::withMessages(['balai_id' => ['Balai tidak valid.']]);
         }
 
-        // --- Cek duplikat per (balai_id, nama_paket) ---
-        $exists = InformasiUmum::query()
-            ->where('nama_balai', $balaiId)
-            ->whereRaw('LOWER(nama_paket) = ?', [mb_strtolower($namaPaket)])
-            ->exists();
+        return DB::transaction(function () use (
+            $balaiColumn,
+            $balaiId,
+            $idPayload,
+            $namaPaket,
+            $tipeInformasi,
+            $kodeRup,
+            $jabatanPPK,
+            $namaPPK,
+            $tipologi
+        ) {
+            // 1) Selalu batasi scope pada balai yang dimaksud
+            $queryBalai = InformasiUmum::query()->where($balaiColumn, $balaiId);
 
-        if ($exists) {
-            throw ValidationException::withMessages([
-                'nama_paket' => ['Nama paket sudah digunakan pada balai ini.']
-            ]);
-        }
+            if (!empty($idPayload)) {
+                $row = (clone $queryBalai)->where('id', $idPayload)->first();
+                if (!$row) {
+                    throw ValidationException::withMessages([
+                        'id' => ['Data tidak ditemukan pada balai ini.']
+                    ]);
+                }
 
-        return DB::transaction(function () use ($balaiId, $namaPaket, $kodeRup, $jabatanPPK, $namaPPK, $tipeInformasi, $tipologi) {
-            $informasiUmum = InformasiUmum::create([
-                'nama_balai'      => $balaiId,
+                // Cek unik nama_paket pada balai yang sama, exclude dirinya
+                $dupe = (clone $queryBalai)
+                    ->whereRaw('LOWER(nama_paket) = ?', [mb_strtolower($namaPaket)])
+                    ->where('id', '!=', $row->id)
+                    ->exists();
+
+                if ($dupe) {
+                    throw ValidationException::withMessages([
+                        'nama_paket' => ['Nama paket sudah digunakan pada balai ini.']
+                    ]);
+                }
+                
+                $row->fill([
+                    $balaiColumn      => $balaiId, 
+                    'nama_paket'      => $namaPaket,
+                    'kode_rup'        => $kodeRup,
+                    'jabatan_ppk'     => $jabatanPPK,
+                    'nama_ppk'        => $namaPPK,
+                    'jenis_informasi' => $tipeInformasi,
+                    'tipologi'        => $tipologi,
+                ])->save();
+
+                $ok = $this->savePerencanaanData($row->id, 'informasi_umum_id');
+                if (!$ok) {
+                    throw ValidationException::withMessages([
+                        'perencanaan_data' => ['Gagal menyimpan data perencanaan.']
+                    ]);
+                }
+
+                return $row;
+            }
+
+            // ====== MODE CREATE ======
+            // Cek duplikat nama_paket pada balai yang sama
+            $exists = (clone $queryBalai)
+                ->whereRaw('LOWER(nama_paket) = ?', [mb_strtolower($namaPaket)])
+                ->exists();
+
+            if ($exists) {
+                throw ValidationException::withMessages([
+                    'nama_paket' => ['Nama paket sudah digunakan pada balai ini.']
+                ]);
+            }
+
+            // Buat baru
+            $row = InformasiUmum::create([
+                $balaiColumn      => $balaiId,
                 'nama_paket'      => $namaPaket,
                 'kode_rup'        => $kodeRup,
                 'jabatan_ppk'     => $jabatanPPK,
                 'nama_ppk'        => $namaPPK,
-                'jenis_informasi' => $tipeInformasi,    
+                'jenis_informasi' => $tipeInformasi,
                 'tipologi'        => $tipologi,
-                'nama_balai'      => $balaiId
             ]);
 
-            $ok = $this->savePerencanaanData($informasiUmum->id, 'informasi_umum_id');
+            $ok = $this->savePerencanaanData($row->id, 'informasi_umum_id');
             if (!$ok) {
                 throw ValidationException::withMessages([
                     'perencanaan_data' => ['Gagal menyimpan data perencanaan.']
                 ]);
             }
 
-            return $informasiUmum;
+            return $row;
         });
     }
 

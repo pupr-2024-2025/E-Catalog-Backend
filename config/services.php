@@ -33,6 +33,6 @@ return [
     'sipasti' => [
         'jwt_secret' => env('SIPASTI_JWT_SECRET'),
         'jwt_algo'   => env('SIPASTI_JWT_ALGO', 'HS256'),
-        'jwt_leeway' => (int) env('SIPASTI_JWT_LEEWAY', 5),
+        'jwt_leeway' => (int) env('SIPASTI_JWT_LEEWAY', 86400),
     ]
 ];

@@ -60,18 +60,15 @@ class PerencanaanDataController extends Controller
 
     public function storeInformasiUmumData(Request $request)
     {
+        $authUser  = $request->attributes->get('auth_user', []);
+        $idBalai = $authUser['balai_kerja_id'] ?? $request->query('nama_balai');
+
         $rules = [
             'tipe_informasi_umum' => 'required',
             'nama_paket' => 'required',
             'nama_ppk' => 'required',
             'jabatan_ppk' => 'required',
         ];
-        if ($request->tipe_informasi_umum == 'manual') {
-            $rules = array_merge($rules, [
-                'nama_balai' => 'required',
-                //'tipologi' => 'required',
-            ]);
-        }
 
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
@@ -92,13 +89,13 @@ class PerencanaanDataController extends Controller
         // }
 
         try {
-            $saveInformasiUmum = $this->informasiUmumService->saveInformasiUmum($request);
+            $saveInformasiUmum = $this->informasiUmumService->saveInformasiUmum($request, $idBalai);
             if (!$saveInformasiUmum) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Gagal menyimpan data!',
                     'data' => []
-                ]);
+                ], Response::HTTP_BAD_REQUEST);
             }
             //change status
             $this->perencanaanDataService->changeStatusPerencanaanData(config('constants.STATUS_PERENCANAAN'), $saveInformasiUmum['id']);
@@ -107,13 +104,13 @@ class PerencanaanDataController extends Controller
                 'status' => 'success',
                 'message' => 'Data berhasil disimpan',
                 'data' => $saveInformasiUmum
-            ]);
+            ], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal menyimpan pengguna',
                 'error' => $e->getMessage()
-            ]);
+            ], Response::HTTP_BAD_REQUEST);
         }
     }
 

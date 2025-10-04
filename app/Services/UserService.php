@@ -148,15 +148,12 @@ class UserService
         return $result;
     }
 
-    public function listUserByNamaBalaiOrIdBalai($data)
+    public function listUserByNamaBalaiOrIdBalai(array $data)
     {
-        // Bisa masuk sebagai 'balai_key' atau 'id_balai'
         $idBalai   = $data['id_balai']   ?? $data['balai_key'] ?? null;
         $namaBalai = $data['nama_balai'] ?? null;
 
-        $ROLE_GUEST = 9;
-
-        $query = Users::query()
+        $q = Users::query()
             ->select([
                 'users.id AS user_id',
                 'users.nama_lengkap',
@@ -169,30 +166,24 @@ class UserService
             ->leftJoin('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
             ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
-            ->whereNotNull('users.email_verified_at')
-            ->where('users.id_roles', '=', $ROLE_GUEST)
-            ->when($idBalai !== null || $namaBalai !== null, function ($q) use ($idBalai, $namaBalai) {
-                $q->where(function ($sub) use ($idBalai, $namaBalai) {
-                    if (!is_null($idBalai)) {
-                        $sub->orWhere('satuan_balai_kerja.id', $idBalai);
-                    }
-                    if (!is_null($namaBalai)) {
-                        $sub->orWhere('satuan_balai_kerja.nama', 'LIKE', '%' . $namaBalai . '%');
-                    }
-                });
-            });
+            ->whereNotNull('users.email_verified_at');
 
-        $users = $query->get();
+        if (!is_null($idBalai)) {
+            $q->where('satuan_balai_kerja.id', $idBalai);
+        } elseif (!is_null($namaBalai) && $namaBalai !== '') {
+            $q->whereRaw('LOWER(satuan_balai_kerja.nama) = ?', [mb_strtolower($namaBalai)]);
+        }
 
-        // mapping agar key & urutan field sama persis
+        $users = $q->get();
+
         return $users->map(function ($user) {
             return [
                 'user_id'           => (int) $user->user_id,
                 'nama_lengkap'      => $user->nama_lengkap,
-                'nrp'               => $user->nrp,                 // bisa null
-                'satuan_kerja_name' => $user->satuan_kerja_name,   // bisa null
-                'role'              => $user->role,                // ekspektasi "guest"
-                'surat_penugasan'   => $user->surat_penugasan,     // bisa null
+                'nrp'               => $user->nrp,
+                'satuan_kerja_name' => $user->satuan_kerja_name,
+                'role'              => $user->role,
+                'surat_penugasan'   => $user->surat_penugasan,
             ];
         })->values();
     }

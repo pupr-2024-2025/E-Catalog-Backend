@@ -148,6 +148,15 @@ class UserService
         return $result;
     }
 
+    public function updateRole($userId, $roleName)
+    {
+        $role = Roles::where('nama', $roleName)->first();
+        if (!$role) return null;
+
+        Users::where('id', $userId)->update(['id_roles' => $role->id]);
+        return Users::find($userId);
+    }
+
     public function listUserByNamaBalaiOrIdBalai(array $data)
     {
         $idBalai   = $data['id_balai']   ?? $data['balai_key'] ?? null;

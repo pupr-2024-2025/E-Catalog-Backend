@@ -56,7 +56,7 @@ Route::middleware(['sipasti.jwt'])->group(function () {
 
     Route::get('/list-role', [UsersController::class, 'listRole']);
     Route::get('/user/list-user-verif', [UsersController::class, 'getListUserVerification']);
-    Route::get("/user/get-profile",[UsersController::class,"getProfileUser"]);
+    Route::get("/user/get-profile", [UsersController::class, "getProfileUser"]);
     Route::get('/get-user/{id}', [UsersController::class, 'getUserById']);
 
     Route::post('/store-balai-kerja', [BalaiKerjaController::class, 'storeSatuanBalaiKerja']);
@@ -129,12 +129,13 @@ Route::middleware(['sipasti.jwt'])->group(function () {
     Route::get('/eksternal/get-all-data-tenaga-kerja', [EksternalAppController::class, 'getAllTenagaKerja']);
 
     Route::get('/pj-balai/list-user', [UsersController::class, 'listByRoleAndByBalai']);
+    Route::post('pj-balai/update-role', [UserController::class, 'updateRole']);
     Route::get('/pj-balai/list-user-standby', [UsersController::class, 'listByRoleAndByBalaiStatusStandby']);
     Route::get('/pj-balai/list-user-by-balai', [UsersController::class, 'listUserByNamaBalai']);
     Route::get('/pj-balai/list-perencanaan-by-nama-balai', [PerencanaanDataController::class, "listPerencanaanDataByNamaBalai"]);
     Route::get('/pj-balai/list-pengumpulan-by-nama-balai', [PengumpulanDataController::class, "listPengumpulanDataByNamaBalai"]);
     Route::get('/pj-balai/list-pemeriksaan-by-nama-balai', [PengumpulanDataController::class, "listPemeriksaanDataByNamaBalai"]);
-    Route::patch("pj-balai/unassign-penugasan-and-role",[UsersController::class,"unassignRoleAndPenugasan"]);
+    Route::patch("pj-balai/unassign-penugasan-and-role", [UsersController::class, "unassignRoleAndPenugasan"]);
 });
 
 Route::get('/test-email', function () {

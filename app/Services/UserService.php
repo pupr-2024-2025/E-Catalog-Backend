@@ -176,11 +176,11 @@ class UserService
 
     public function updateRole($userId, $roleName)
     {
-        $role = Roles::where('nama', $roleName)->first();
-        if (!$role) return null;
-
-        Users::where('id', $userId)->update(['id_roles' => $role->id]);
-        return Users::find($userId);
+        return DB::transaction(function () use ($userId) {
+            Users::where('id', $userId)->update(['id_roles' => null]);
+            DB::table('team_teknis_balai_members')->where('user_id', $userId)->delete();
+            return Users::find($userId);
+        });
     }
 
     public function listUserByNamaBalaiOrIdBalai(array $data)

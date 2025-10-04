@@ -174,14 +174,41 @@ class UserService
         return $result;
     }
 
-    public function updateRole($userId, $roleName)
+    public function updateRole($userId, $ignored = null)
     {
         return DB::transaction(function () use ($userId) {
-            Users::where('id', $userId)->update(['id_roles' => null]);
+            $guestId = Roles::whereRaw('LOWER(nama) = ?', ['guest'])->value('id');
+            if (!$guestId) return null;
+
+            Users::where('id', $userId)->update(['id_roles' => $guestId]);
+
             DB::table('team_teknis_balai_members')->where('user_id', $userId)->delete();
+            DB::table('pengawas')->where('user_id', $userId)->delete();
+            DB::table('petugas_lapangan')->where('user_id', $userId)->delete();
+            DB::table('pengolah_data')->where('user_id', $userId)->delete();
+
+            $cols = ['pengawas_id', 'petugas_lapangan_id', 'pengolah_data_id', 'team_teknis_balai_id'];
+            $rows = PerencanaanData::query()->where(function ($q) use ($cols, $userId) {
+                foreach ($cols as $c) $q->orWhereJsonContains($c, (string) $userId);
+            })->get(array_merge(['id'], $cols));
+
+            foreach ($rows as $r) {
+                $updates = [];
+                foreach ($cols as $c) {
+                    $arr = json_decode($r->{$c}, true);
+                    if (is_array($arr)) {
+                        $next = array_values(array_filter($arr, fn($v) => (string) $v !== (string) $userId));
+                        if ($next !== $arr) $updates[$c] = json_encode($next);
+                    }
+                }
+                if ($updates) PerencanaanData::where('id', $r->id)->update($updates);
+            }
+
             return Users::find($userId);
         });
     }
+
+
 
     public function listUserByNamaBalaiOrIdBalai(array $data)
     {

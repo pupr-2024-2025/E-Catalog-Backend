@@ -6,6 +6,7 @@ use App\Models\Users;
 use App\Models\PerencanaanData;
 use App\Models\Roles;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class UserService
 {
@@ -16,7 +17,6 @@ class UserService
 
     public function checkUserIfExist($userId)
     {
-        // return Users::where('id', $userId)->whereNull('email_verified_at')->first();
         return Users::join('accounts', 'users.id', '=', 'accounts.user_id')
             ->where('users.id', $userId)
             ->whereNull('users.email_verified_at')
@@ -25,28 +25,58 @@ class UserService
 
     public function listUser()
     {
-        $data = Users::select(
-            'users.id AS user_id',
-            'users.nama_lengkap',
-            'users.no_handphone',
-            'users.nrp AS nrp/nip',
-            'satuan_kerja.nama AS satuan_kerja',
-            'satuan_balai_kerja.nama AS balai_kerja',
-            'users.email',
-            'users.surat_penugasan_url AS sk_penugasan',
-        )
+        $rows = Users::query()
+            ->leftJoin('roles', 'users.id_roles', '=', 'roles.id')
             ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->leftJoin('satuan_balai_kerja', 'users.balai_kerja_id', '=', 'satuan_balai_kerja.id')
+            ->leftJoin('team_teknis_balai_members as ttbm', function ($join) {
+                $join->on('ttbm.user_id', '=', 'users.id')->whereNull('ttbm.deleted_at');
+            })
+            ->leftJoin('team_teknis_balai as ttb', 'ttbm.team_id', '=', 'ttb.id')
             ->where('users.status', 'verification')
             ->whereNotNull('users.email_verified_at')
             ->where('users.id_roles', '!=', 1)
+            ->select([
+                'users.id AS user_id',
+                'users.nama_lengkap',
+                'users.no_handphone',
+                'users.nrp as nrp',
+                DB::raw('satuan_kerja.nama AS satuan_kerja'),
+                DB::raw('satuan_balai_kerja.nama AS balai_kerja'),
+                'users.email',
+                'users.surat_penugasan_url AS sk_penugasan',
+                DB::raw('roles.nama as role'),
+                DB::raw("CASE WHEN LOWER(roles.nama) = 'tim teknis balai' THEN GROUP_CONCAT(DISTINCT ttb.nama_team ORDER BY ttb.nama_team SEPARATOR ', ') ELSE NULL END as nama_team"),
+            ])
+            ->groupBy([
+                'users.id',
+                'users.nama_lengkap',
+                'users.no_handphone',
+                'users.nrp',
+                'satuan_kerja.nama',
+                'satuan_balai_kerja.nama',
+                'users.email',
+                'users.surat_penugasan_url',
+                'roles.nama',
+            ])
+            ->orderBy('users.id', 'asc')
             ->get();
 
-        $data->transform(function ($item) {
-            $item->sk_penugasan = Storage::url($item->sk_penugasan);
-            return $item;
-        });
-        return $data;
+        return $rows->map(function ($r) {
+            $suratUrl = $r->sk_penugasan ? url(Storage::url($r->sk_penugasan)) : null;
+            return [
+                'user_id' => (int) $r->user_id,
+                'nama_lengkap' => $r->nama_lengkap,
+                'no_handphone' => $r->no_handphone,
+                'nrp' => $r->nrp,
+                'satuan_kerja' => $r->satuan_kerja,
+                'balai_kerja' => $r->balai_kerja,
+                'email' => $r->email,
+                'sk_penugasan' => $suratUrl,
+                'role' => $r->role,
+                'nama_team' => $r->nama_team,
+            ];
+        })->values();
     }
 
     public function listUserByRoleAndBalai($data)
@@ -54,7 +84,6 @@ class UserService
         $roleName = $data['role'];
         $balaiKey = $data['balai_key'];
 
-        // Step 1: Get all eligible users (active, verified, correct role & balai)
         $users = Users::select([
             'users.id AS user_id',
             'users.nama_lengkap',
@@ -67,12 +96,11 @@ class UserService
             ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
             ->whereNotNull('users.email_verified_at')
-            ->where('users.id_roles', '!=', 1) // exclude superadmin
-            ->where('roles.nama', $roleName) // filter by role name
-            ->where('satuan_balai_kerja.id', $balaiKey) // filter by balai
+            ->where('users.id_roles', '!=', 1)
+            ->where('roles.nama', $roleName)
+            ->where('satuan_balai_kerja.id', $balaiKey)
             ->get();
 
-        // Step 2: Map each user and add status_penugasan
         $result = $users->map(function ($user) use ($roleName) {
             $exists = false;
 
@@ -104,7 +132,6 @@ class UserService
         $roleName = $data['role'];
         $balaiKey = $data['balai_key'];
 
-        // Step 1: Get all eligible users (active, verified, correct role & balai)
         $users = Users::select([
             'users.id AS user_id',
             'users.nama_lengkap',
@@ -117,12 +144,11 @@ class UserService
             ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
             ->where('users.status', 'active')
             ->whereNotNull('users.email_verified_at')
-            ->where('users.id_roles', '!=', 1) // exclude superadmin
-            ->where('roles.nama', $roleName) // filter by role name
-            ->where('satuan_balai_kerja.id', $balaiKey) // filter by balai
+            ->where('users.id_roles', '!=', 1)
+            ->where('roles.nama', $roleName)
+            ->where('satuan_balai_kerja.id', $balaiKey)
             ->get();
 
-        // Step 2: Hanya ambil user yang belum ditugaskan
         $result = $users->filter(function ($user) use ($roleName) {
             if ($roleName === 'pengawas') {
                 return !PerencanaanData::whereJsonContains('pengawas_id', (string)$user->user_id)->exists();

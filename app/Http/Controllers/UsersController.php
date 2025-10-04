@@ -87,6 +87,59 @@ class UsersController extends Controller
         }
     }
 
+    public function updateRole(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'role'    => ['required', 'string'],
+        ]);
+
+        if ($validated->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal.',
+                'errors'  => $validated->errors(),
+            ], 422);
+        }
+
+        $userId = (int) $request->input('user_id');
+        $roleNameRaw = trim((string) $request->input('role'));
+
+        $role = Roles::query()
+            ->whereRaw('LOWER(nama) = ?', [mb_strtolower($roleNameRaw)])
+            ->first();
+
+        if (!$role) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Role tidak ditemukan.',
+            ], 422);
+        }
+
+        Users::where('id', $userId)->update(['id_roles' => $role->id]);
+
+        $user = Users::query()
+            ->leftJoin('roles', 'users.id_roles', '=', 'roles.id')
+            ->leftJoin('satuan_kerja', 'users.satuan_kerja_id', '=', 'satuan_kerja.id')
+            ->select([
+                'users.id as user_id',
+                'users.nama_lengkap',
+                'users.nrp',
+                'satuan_kerja.nama as satuan_kerja_name',
+                'roles.nama as role',
+                'users.surat_penugasan_url as surat_penugasan',
+            ])
+            ->where('users.id', $userId)
+            ->first();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Role pengguna berhasil diperbarui.',
+            'data'    => $user,
+        ], 200);
+    }
+
+
     public function getUserById($id)
     {
         try {

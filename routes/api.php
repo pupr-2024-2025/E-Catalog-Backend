@@ -129,7 +129,7 @@ Route::middleware(['sipasti.jwt'])->group(function () {
     Route::get('/eksternal/get-all-data-tenaga-kerja', [EksternalAppController::class, 'getAllTenagaKerja']);
 
     Route::get('/pj-balai/list-user', [UsersController::class, 'listByRoleAndByBalai']);
-    Route::post('pj-balai/update-role', [UserController::class, 'updateRole']);
+    Route::post('pj-balai/update-role', [UsersController::class, 'updateRole']);
     Route::get('/pj-balai/list-user-standby', [UsersController::class, 'listByRoleAndByBalaiStatusStandby']);
     Route::get('/pj-balai/list-user-by-balai', [UsersController::class, 'listUserByNamaBalai']);
     Route::get('/pj-balai/list-perencanaan-by-nama-balai', [PerencanaanDataController::class, "listPerencanaanDataByNamaBalai"]);
